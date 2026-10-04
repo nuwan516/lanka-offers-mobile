@@ -9,11 +9,13 @@ import 'package:intl/intl.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/phase_two_survey_service.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/location.dart';
 import '../../../domain/entities/validity_period.dart';
 import '../../../domain/repositories/offer_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
+import '../../common/widgets/bank_badge.dart';
 
 class OfferDetailScreen extends StatefulWidget {
   const OfferDetailScreen({
@@ -295,7 +297,10 @@ class _OfferDetailContent extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
+              if (offer.bankName.isNotEmpty)
+                BankBadge(bankName: offer.bankName),
+              const SizedBox(height: 6),
               Text(
                 offer.title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -681,12 +686,35 @@ class _InfoRow extends StatelessWidget {
 class _DetailPlaceholder extends StatelessWidget {
   const _DetailPlaceholder();
   @override
-  Widget build(BuildContext context) => ColoredBox(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: const Center(
-          child: Icon(Icons.account_balance, size: 64, color: Colors.grey),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [const Color(0xFFFFF1F2), const Color(0xFFFEE2E2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      );
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: (isDark ? AppColors.primaryLight : AppColors.primary)
+                .withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.local_offer_rounded,
+            size: 40,
+            color: isDark ? AppColors.primaryLight : AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _LocationScopeBadge extends StatelessWidget {

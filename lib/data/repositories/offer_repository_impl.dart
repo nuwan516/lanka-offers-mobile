@@ -32,20 +32,13 @@ class OfferRepositoryImpl implements OfferRepository {
     double? latitude,
     double? longitude,
   }) async {
-    // The API supports bank filter; distance/district filtering is done client-side.
-    final offers = await _api.fetchOffers();
+    // Backend-api supports category and search filtering directly
+    final offers = await _api.fetchOffers(category: category);
 
     var result = offers;
 
     if (type != null && type != OfferType.bankOffer) {
       return [];
-    }
-
-    if (category != null) {
-      result = result
-          .where((o) =>
-              o.category.toLowerCase() == category.toLowerCase())
-          .toList();
     }
 
     if (district != null && district.isNotEmpty) {
@@ -77,6 +70,17 @@ class OfferRepositoryImpl implements OfferRepository {
     required double longitude,
     required double radius,
   }) async {
+    try {
+      final nearby = await _api.fetchNearbyOffers(
+        lat: latitude,
+        lng: longitude,
+        radius: radius,
+      );
+      if (nearby.isNotEmpty) return nearby;
+    } catch (_) {
+      // Graceful fallback to client-side distance calculation if offline or unseeded
+    }
+
     final offers = await _api.fetchOffers();
     return offers.where((o) {
       // Only offers with confirmed physical branch applicability can be nearby

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/card_eligibility.dart';
@@ -11,8 +12,7 @@ import '../../../domain/entities/restrictions.dart';
 import '../../../domain/entities/validity_period.dart';
 
 /// Fetches real offer data from the Lanka Offers Express API.
-/// Android emulator reaches the host machine at 10.0.2.2; all other
-/// platforms (iOS simulator, Windows desktop) use localhost.
+/// Connects to backend-api (port 3001) in development or production.
 class ApiOffersDataSource {
   ApiOffersDataSource();
 
@@ -21,23 +21,69 @@ class ApiOffersDataSource {
   String get _base {
     const fromEnv = String.fromEnvironment('API_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
+    if (kDebugMode) {
+      if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:3001';
+      return 'http://localhost:3001';
+    }
     return _prodUrl;
   }
 
   Future<List<BankOffer>> fetchOffers({
     String? bank,
+    String? category,
     String? search,
-    String status = 'active',
-    int limit = 200,
+    String? merchant,
+    String? locationScope,
+    int limit = 100,
+    int offset = 0,
   }) async {
     final params = <String, String>{
-      'status': status,
       'limit': limit.toString(),
+      'offset': offset.toString(),
     };
-    if (bank != null && bank.isNotEmpty) params['bank'] = bank;
+    if (bank != null && bank.isNotEmpty) params['bank'] = bank.toLowerCase();
+    if (category != null && category.isNotEmpty) params['category'] = category;
     if (search != null && search.isNotEmpty) params['search'] = search;
+    if (merchant != null && merchant.isNotEmpty) params['merchant'] = merchant;
+    if (locationScope != null && locationScope.isNotEmpty) {
+      params['locationScope'] = locationScope;
+    }
 
     final uri = Uri.parse('$_base/api/offers').replace(queryParameters: params);
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw Exception('API error ${response.statusCode}');
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final items = (body['items'] as List<dynamic>? ?? []);
+    return items
+        .map((j) => _map(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<BankOffer>> fetchNearbyOffers({
+    required double lat,
+    required double lng,
+    double radius = 25.0,
+    String? bank,
+    String? category,
+    String? search,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final params = <String, String>{
+      'lat': lat.toString(),
+      'lng': lng.toString(),
+      'radius': radius.toString(),
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (bank != null && bank.isNotEmpty) params['bank'] = bank.toLowerCase();
+    if (category != null && category.isNotEmpty) params['category'] = category;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+
+    final uri =
+        Uri.parse('$_base/api/offers/nearby').replace(queryParameters: params);
     final response = await http.get(uri).timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw Exception('API error ${response.statusCode}');
@@ -65,7 +111,8 @@ class ApiOffersDataSource {
     final offerData = raw?['offer'] as Map<String, dynamic>?;
     final merchantData = raw?['merchant'] as Map<String, dynamic>?;
 
-    final description = _str(offerData?['description'])?.trim() ??
+    final description = _str(j['description']) ??
+        _str(offerData?['description'])?.trim() ??
         _str(j['title']) ??
         '';
 
@@ -189,6 +236,9 @@ class ApiOffersDataSource {
           : _str(j['title']) ?? '',
       canonicalMerchant: _str(j['canonical_merchant']),
       locationScope: _str(j['location_scope']),
+      merchantLocation: _str(j['merchant_location']),
+      terms: _str(j['terms']),
+      distanceKm: _dbl(j['distance_km']),
       discount: discount,
       applicableCards: cards.toSet().toList(),
       cardEligibility: cardEligibility,

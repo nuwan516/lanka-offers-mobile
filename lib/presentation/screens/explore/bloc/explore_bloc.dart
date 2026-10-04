@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../domain/usecases/get_all_offers.dart';
 import '../../../../domain/usecases/filter_offers.dart' as usecases;
-import '../../../../core/constants/app_constants.dart';
 import '../../../../data/datasources/remote/api_offers_datasource.dart';
 import 'explore_event.dart';
 import 'explore_state.dart';
@@ -37,30 +36,40 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
     try {
       List<BankOffer> offers;
 
-      if (event.bank != null && event.bank!.isNotEmpty) {
-        offers = await _apiDataSource.fetchOffers(bank: _bankApiKey(event.bank!));
-        if (event.category != null) {
-          offers = offers
-              .where((o) => o.category.toLowerCase() == event.category!.toLowerCase())
-              .toList();
+      if (event.nearbyOnly && event.userLatitude != null && event.userLongitude != null) {
+        try {
+          offers = await _apiDataSource.fetchNearbyOffers(
+            lat: event.userLatitude!,
+            lng: event.userLongitude!,
+            radius: 25.0,
+            bank: event.bank != null && event.bank!.isNotEmpty ? _bankApiKey(event.bank!) : null,
+            category: event.category,
+          );
+        } catch (_) {
+          offers = await _apiDataSource.fetchOffers(
+            bank: event.bank != null && event.bank!.isNotEmpty ? _bankApiKey(event.bank!) : null,
+            category: event.category,
+          );
         }
-        if (event.district != null) {
-          offers = offers.where((o) {
-            return o.locations.any(
-              (loc) => loc.district.toLowerCase() == event.district!.toLowerCase(),
-            );
-          }).toList();
-        }
-      } else if (event.category != null || event.district != null) {
-        offers = (await filterOffers(
-          type: null,
+      } else if (event.bank != null && event.bank!.isNotEmpty) {
+        offers = await _apiDataSource.fetchOffers(
+          bank: _bankApiKey(event.bank!),
           category: event.category,
-          district: event.district,
-          latitude: AppConstants.defaultLatitude,
-          longitude: AppConstants.defaultLongitude,
-        )).whereType<BankOffer>().toList();
+        );
+      } else if (event.category != null && event.category!.isNotEmpty) {
+        offers = await _apiDataSource.fetchOffers(
+          category: event.category,
+        );
       } else {
         offers = (await getAllOffers()).whereType<BankOffer>().toList();
+      }
+
+      if (event.district != null && event.district!.isNotEmpty) {
+        offers = offers.where((o) {
+          return o.locations.any(
+            (loc) => loc.district.toLowerCase() == event.district!.toLowerCase(),
+          );
+        }).toList();
       }
 
       if (event.matchMyCards) {
@@ -77,24 +86,10 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
       if (event.nearbyOnly && event.userLatitude != null && event.userLongitude != null) {
         final uLat = event.userLatitude!;
         final uLng = event.userLongitude!;
-        offers = offers.where((o) {
-          if (o.locationScope == 'ONLINE' ||
-              o.locationScope == 'NATIONWIDE' ||
-              o.locationScope == 'UNRESOLVED' ||
-              o.locationScope == 'SELECTED_OUTLETS') {
-            return false;
-          }
-          if (o.locations.isEmpty) return false;
-          return o.locations.any((loc) {
-            if (loc.latitude == 0 && loc.longitude == 0) return false;
-            final distKm = Geolocator.distanceBetween(uLat, uLng, loc.latitude, loc.longitude) / 1000;
-            return distKm <= 20.0;
-          });
-        }).toList();
-
+        // Sort by distance (either from backend-api distanceKm or local calculation)
         offers.sort((a, b) {
-          final distA = _minDistanceKm(a, uLat, uLng);
-          final distB = _minDistanceKm(b, uLat, uLng);
+          final distA = a.distanceKm ?? _minDistanceKm(a, uLat, uLng);
+          final distB = b.distanceKm ?? _minDistanceKm(b, uLat, uLng);
           return distA.compareTo(distB);
         });
       } else {

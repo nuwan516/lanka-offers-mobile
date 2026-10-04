@@ -13,16 +13,29 @@ class AppColors {
   static const Color accent = Color(0xFF00897B); // Teal green
   static const Color accentLight = Color(0xFF4DB6AC);
 
-  // Neutrals
-  static const Color background = Color(0xFFF5F7FA);
+  // Neutrals (Light)
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF0F0F0);
+  static const Color surfaceVariant = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color borderSubtle = Color(0xFFEDF2F7);
 
-  // Text
-  static const Color textPrimary = Color(0xFF1A1A1A);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  // Neutrals (Dark)
+  static const Color darkBackground = Color(0xFF0F172A); // Slate 900
+  static const Color darkSurface = Color(0xFF1E293B);    // Slate 800
+  static const Color darkSurfaceVariant = Color(0xFF334155); // Slate 700
+  static const Color darkBorder = Color(0xFF334155);
+
+  // Text (Light)
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textTertiary = Color(0xFF94A3B8);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
+
+  // Text (Dark)
+  static const Color darkTextPrimary = Color(0xFFF8FAFC);
+  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  static const Color darkTextTertiary = Color(0xFF64748B);
 
   // Status Colors
   static const Color success = Color(0xFF10B981);

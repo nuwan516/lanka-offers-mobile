@@ -14,6 +14,9 @@ class BankOffer extends BaseOffer {
   final List<String> applicableCards;
   final CardEligibility? cardEligibility;
   final Restrictions? restrictions;
+  final double? distanceKm;
+  final String? merchantLocation;
+  final String? terms;
   final double? minTransaction;
   final double? maxTransaction;
 
@@ -34,6 +37,9 @@ class BankOffer extends BaseOffer {
     required this.merchantName,
     this.canonicalMerchant,
     this.locationScope,
+    this.merchantLocation,
+    this.terms,
+    this.distanceKm,
     this.discount,
     this.installmentPlans,
     required this.applicableCards,
@@ -84,6 +90,9 @@ class BankOffer extends BaseOffer {
     merchantName,
     canonicalMerchant,
     locationScope,
+    merchantLocation,
+    terms,
+    distanceKm,
     discount,
     installmentPlans,
     applicableCards,
