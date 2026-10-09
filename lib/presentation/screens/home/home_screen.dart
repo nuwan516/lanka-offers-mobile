@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -174,204 +175,233 @@ class _HomeViewState extends State<_HomeView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-              appBar: AppBar(
-                title: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.local_offer_rounded,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      l10n.appName,
-                      style: AppTextStyles.h2.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: AppColors.redGlowShadow,
+              ),
+              child: const Icon(
+                Icons.bolt_rounded,
+                size: 18,
+                color: AppColors.flashYellow,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              l10n.appName,
+              style: AppTextStyles.h2.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                letterSpacing: -0.5,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              decoration: BoxDecoration(
+                gradient: AppColors.yellowFlashGradient,
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: AppColors.yellowGlowShadow,
+              ),
+              child: const Text(
+                'DEALS',
+                style: TextStyle(
+                  color: Color(0xFF8B1010),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.6,
                 ),
-                actions: [
-                  IconButton(
-                    tooltip: l10n.searchHint,
-                    onPressed: () => context.push('/search'),
-                    icon: Icon(
-                      Icons.search,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Saved Offers',
-                    onPressed: () => context.push('/saved'),
-                    icon: Icon(
-                      Icons.bookmark_border_rounded,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                ],
               ),
-              body: BlocBuilder<HomeBloc, HomeState>(
-                builder: (context, state) {
-                  if (state is HomeLoading) return const LoadingShimmer.feed();
-                  if (state is HomeError) {
-                    return ErrorView(
-                      message: l10n.text('connectionRetry'),
-                      onRetry: () =>
-                          context.read<HomeBloc>().add(LoadHomeData()),
-                    );
-                  }
-                  if (state is! HomeLoaded) return const SizedBox.shrink();
-
-                  final filteredFeatured = _filterOffers(state.featuredOffers);
-                  final filteredAll = _filterOffers(state.allOffers);
-                  final filteredNearby = _filterOffers(state.nearbyOffers);
-                  final endingSoon = filteredAll.where(_expiresSoon).toList();
-
-                  return RefreshIndicator(
-                    onRefresh: () async =>
-                        context.read<HomeBloc>().add(RefreshHomeData()),
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      children: [
-                        // Hero Banner with modern gradient and search bar trigger
-                        _buildHeroBanner(context, isDark, l10n),
-
-                        const SizedBox(height: 18),
-
-                        // Bank Quick-Filter Horizontal Scroll
-                        _buildBankFilterRow(isDark),
-
-                        const SizedBox(height: 14),
-
-                        // Category Quick-Filter Horizontal Scroll
-                        _buildCategoryFilterRow(isDark),
-
-                        // Card Personalization Banner
-                        if (!_hasPreferences) ...[
-                          const SizedBox(height: 18),
-                          _buildPersonalizeCardBanner(context, isDark, l10n),
-                        ],
-
-                        // Featured Offers Section
-                        if (filteredFeatured.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(
-                            context: context,
-                            title: l10n.featuredOffers,
-                            count: filteredFeatured.length,
-                            onSeeAll: () => context.push('/explore'),
-                          ),
-                          const SizedBox(height: 12),
-                          for (int i = 0; i < filteredFeatured.take(4).length; i++)
-                            OfferCard(
-                              offer: filteredFeatured[i],
-                              contextOffers: filteredFeatured,
-                              initialIndex: i,
-                            ),
-                        ],
-
-                        // Ending Soon Section
-                        if (endingSoon.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(
-                            context: context,
-                            title: l10n.endingSoon,
-                            count: endingSoon.length,
-                            icon: Icons.local_fire_department_rounded,
-                            iconColor: AppColors.urgentRed,
-                            onSeeAll: () => context.push('/explore'),
-                          ),
-                          const SizedBox(height: 12),
-                          for (int i = 0; i < endingSoon.take(3).length; i++)
-                            OfferCard(
-                              offer: endingSoon[i],
-                              contextOffers: endingSoon,
-                              initialIndex: i,
-                            ),
-                        ],
-
-                        // Nearby Offers Teaser
-                        if (filteredNearby.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(
-                            context: context,
-                            title: l10n.nearbyOffers,
-                            count: filteredNearby.length,
-                            icon: Icons.near_me_rounded,
-                            iconColor: isDark ? AppColors.primaryLight : AppColors.primary,
-                            actionLabel: 'View on Map',
-                            onSeeAll: () => context.push('/explore'),
-                          ),
-                          const SizedBox(height: 12),
-                          for (int i = 0; i < filteredNearby.take(3).length; i++)
-                            OfferCard(
-                              offer: filteredNearby[i],
-                              contextOffers: filteredNearby,
-                              initialIndex: i,
-                            ),
-                        ],
-
-                        // All Verified Offers Section
-                        const SizedBox(height: 24),
-                        _buildSectionHeader(
-                          context: context,
-                          title: l10n.text('allBankOffers'),
-                          count: filteredAll.length,
-                        ),
-                        const SizedBox(height: 12),
-                        if (filteredAll.isEmpty)
-                          _buildEmptyFilterState(isDark)
-                        else
-                          for (int i = 0; i < filteredAll.take(15).length; i++)
-                            OfferCard(
-                              offer: filteredAll[i],
-                              contextOffers: filteredAll,
-                              initialIndex: i,
-                            ),
-
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  );
-                },
-              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: l10n.searchHint,
+            onPressed: () => context.push('/search'),
+            icon: Icon(
+              Icons.search_rounded,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Saved Offers',
+            onPressed: () => context.push('/saved'),
+            icon: Icon(
+              Icons.bookmark_border_rounded,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          if (state is HomeLoading) return const LoadingShimmer.feed();
+          if (state is HomeError) {
+            return ErrorView(
+              message: l10n.text('connectionRetry'),
+              onRetry: () =>
+                  context.read<HomeBloc>().add(LoadHomeData()),
             );
+          }
+          if (state is! HomeLoaded) return const SizedBox.shrink();
+
+          final filteredFeatured = _filterOffers(state.featuredOffers);
+          final filteredAll = _filterOffers(state.allOffers);
+          final filteredNearby = _filterOffers(state.nearbyOffers);
+          final endingSoon = filteredAll.where(_expiresSoon).toList();
+          final flashOffers = endingSoon.isNotEmpty ? endingSoon : filteredFeatured;
+
+          return RefreshIndicator(
+            onRefresh: () async =>
+                context.read<HomeBloc>().add(RefreshHomeData()),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              children: [
+                // Temu-Inspired High-Energy Hero Banner
+                _buildHeroBanner(context, isDark, l10n),
+
+                // Flash Deals / Lightning Deals urgency strip
+                if (flashOffers.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildFlashDealsSection(
+                    context: context,
+                    isDark: isDark,
+                    flashOffers: flashOffers,
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Bank Quick-Filter Horizontal Scroll
+                _buildBankFilterRow(isDark),
+
+                const SizedBox(height: 14),
+
+                // Category Quick-Filter Horizontal Scroll
+                _buildCategoryFilterRow(isDark),
+
+                // Card Personalization Banner
+                if (!_hasPreferences) ...[
+                  const SizedBox(height: 18),
+                  _buildPersonalizeCardBanner(context, isDark, l10n),
+                ],
+
+                // Featured Offers Section
+                if (filteredFeatured.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context: context,
+                    title: l10n.featuredOffers,
+                    count: filteredFeatured.length,
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: AppColors.primary,
+                    onSeeAll: () => context.push('/explore'),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int i = 0; i < filteredFeatured.take(4).length; i++)
+                    OfferCard(
+                      offer: filteredFeatured[i],
+                      contextOffers: filteredFeatured,
+                      initialIndex: i,
+                    ),
+                ],
+
+                // Ending Soon Section
+                if (endingSoon.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context: context,
+                    title: l10n.endingSoon,
+                    count: endingSoon.length,
+                    icon: Icons.alarm_rounded,
+                    iconColor: AppColors.primary,
+                    onSeeAll: () => context.push('/explore'),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int i = 0; i < endingSoon.take(3).length; i++)
+                    OfferCard(
+                      offer: endingSoon[i],
+                      contextOffers: endingSoon,
+                      initialIndex: i,
+                    ),
+                ],
+
+                // Nearby Offers Teaser
+                if (filteredNearby.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context: context,
+                    title: l10n.nearbyOffers,
+                    count: filteredNearby.length,
+                    icon: Icons.near_me_rounded,
+                    iconColor: AppColors.primary,
+                    actionLabel: 'View on Map',
+                    onSeeAll: () => context.push('/explore'),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int i = 0; i < filteredNearby.take(3).length; i++)
+                    OfferCard(
+                      offer: filteredNearby[i],
+                      contextOffers: filteredNearby,
+                      initialIndex: i,
+                    ),
+                ],
+
+                // All Verified Offers Section
+                const SizedBox(height: 24),
+                _buildSectionHeader(
+                  context: context,
+                  title: l10n.text('allBankOffers'),
+                  count: filteredAll.length,
+                  icon: Icons.grid_view_rounded,
+                  iconColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+                const SizedBox(height: 12),
+                if (filteredAll.isEmpty)
+                  _buildEmptyFilterState(isDark)
+                else
+                  for (int i = 0; i < filteredAll.take(15).length; i++)
+                    OfferCard(
+                      offer: filteredAll[i],
+                      contextOffers: filteredAll,
+                      initialIndex: i,
+                    ),
+
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildHeroBanner(BuildContext context, bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [const Color(0xFFE03C31), const Color(0xFFB8251A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF2B1010), Color(0xFF18191D)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : AppColors.heroRedGradient,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : Colors.white.withValues(alpha: 0.15),
+          color: isDark ? AppColors.darkBorder : Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: (isDark ? Colors.black : AppColors.primary).withValues(alpha: 0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: AppColors.redGlowShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,52 +409,69 @@ class _HomeViewState extends State<_HomeView> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
-                  'SRI LANKA',
+                  '🇱🇰 SRI LANKA',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 10,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '10+ Banks Verified',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  gradient: AppColors.yellowFlashGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF8B1010)),
+                    SizedBox(width: 2),
+                    Text(
+                      '10+ BANKS LIVE',
+                      style: TextStyle(
+                        color: Color(0xFF8B1010),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
-            l10n.text('findNextOffer'),
+            'Up to 70% Off Bank Offers',
             style: AppTextStyles.h1.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 22,
-              height: 1.25,
+              fontWeight: FontWeight.w900,
+              fontSize: 23,
+              letterSpacing: -0.5,
+              height: 1.2,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Dining discounts, 1-for-1 deals, installment plans & cashback',
+            'Dining • Supermarkets • Hotels • 0% Installments',
             style: AppTextStyles.body2.copyWith(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 16),
-          // Search Bar Trigger
+          // Search Bar Trigger Capsule
           Semantics(
             button: true,
             label: l10n.text('searchBankOffers'),
@@ -432,60 +479,62 @@ class _HomeViewState extends State<_HomeView> {
               onTap: () => context.push('/search'),
               borderRadius: BorderRadius.circular(14),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF334155).withValues(alpha: 0.8)
-                      : Colors.white,
+                  color: isDark ? const Color(0xFF262830) : Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.search_rounded,
                       size: 20,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      color: AppColors.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         l10n.text('searchBankOffers'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.body2.copyWith(
                           color: isDark
                               ? AppColors.darkTextTertiary
                               : AppColors.textTertiary,
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
+                        gradient: AppColors.yellowFlashGradient,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: AppColors.yellowGlowShadow,
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.tune_rounded,
+                            Icons.bolt_rounded,
                             size: 13,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color: Color(0xFF8B1010),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 2),
                           Text(
-                            'Filter',
+                            'FIND',
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF8B1010),
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
@@ -501,6 +550,278 @@ class _HomeViewState extends State<_HomeView> {
     );
   }
 
+  Widget _buildFlashDealsSection({
+    required BuildContext context,
+    required bool isDark,
+    required List<BankOffer> flashOffers,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: AppColors.redGlowShadow,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.bolt_rounded, size: 14, color: AppColors.flashYellow),
+                      SizedBox(width: 4),
+                      Text(
+                        'FLASH SALE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF332010) : AppColors.secondarySoft,
+                    border: Border.all(color: AppColors.secondary, width: 0.8),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_filled_rounded, size: 11, color: Color(0xFFB87000)),
+                      SizedBox(width: 3),
+                      Text(
+                        'Ends 23:59',
+                        style: TextStyle(
+                          color: Color(0xFFB87000),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: () => context.push('/explore'),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'See all',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 195,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: flashOffers.take(8).length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final offer = flashOffers[index];
+              final image = offer.featuredImage ??
+                  (offer.images.isNotEmpty ? offer.images.first : null);
+
+              return GestureDetector(
+                onTap: () {
+                  context.push(
+                    '/offer/${offer.uniqueId}',
+                    extra: {
+                      'offers': flashOffers,
+                      'initialIndex': index,
+                    },
+                  );
+                },
+                child: Container(
+                  width: 155,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurface : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Thumbnail with Top Discount Ribbon
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            child: SizedBox(
+                              height: 90,
+                              width: double.infinity,
+                              child: image != null && image.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: image,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) => _buildFlashPlaceholder(offer),
+                                    )
+                                  : _buildFlashPlaceholder(offer),
+                            ),
+                          ),
+                          Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: AppColors.redGlowShadow,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.bolt_rounded,
+                                    size: 11,
+                                    color: AppColors.flashYellow,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    offer.getDisplayValue(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Details
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              offer.merchantName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              offer.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                height: 1.25,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: BankBadge.bankBrandColor(offer.bankName)
+                                        .withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    BankBadge.bankInitials(offer.bankName),
+                                    style: TextStyle(
+                                      color: BankBadge.bankBrandColor(offer.bankName),
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySoft,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'CLAIM ⚡',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFlashPlaceholder(BankOffer offer) {
+    final brandColor = BankBadge.bankBrandColor(offer.bankName);
+    return Container(
+      color: brandColor.withValues(alpha: 0.08),
+      alignment: Alignment.center,
+      child: Text(
+        offer.merchantName.isNotEmpty ? offer.merchantName[0].toUpperCase() : '⚡',
+        style: TextStyle(
+          color: brandColor,
+          fontWeight: FontWeight.w900,
+          fontSize: 26,
+        ),
+      ),
+    );
+  }
+
   Widget _buildBankFilterRow(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,23 +829,36 @@ class _HomeViewState extends State<_HomeView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Filter by Bank',
-              style: AppTextStyles.h4.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 3.5,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Filter by Bank',
+                  style: AppTextStyles.h4.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
             if (_selectedBank != null && _selectedBank != 'All Banks')
               GestureDetector(
                 onTap: () => setState(() => _selectedBank = null),
-                child: Text(
+                child: const Text(
                   'Clear',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -566,17 +900,18 @@ class _HomeViewState extends State<_HomeView> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? brandColor
+                        ? AppColors.primary
                         : (isDark
                             ? AppColors.darkSurfaceVariant
                             : AppColors.surfaceVariant),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? brandColor
+                          ? AppColors.secondary
                           : (isDark ? AppColors.darkBorder : AppColors.border),
-                      width: 1,
+                      width: isSelected ? 1.5 : 1,
                     ),
+                    boxShadow: isSelected ? AppColors.redGlowShadow : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -585,16 +920,16 @@ class _HomeViewState extends State<_HomeView> {
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white.withValues(alpha: 0.25)
+                              ? AppColors.flashYellow
                               : brandColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           initials,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isSelected ? const Color(0xFF8B1010) : Colors.white,
                             fontSize: 9,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -603,7 +938,7 @@ class _HomeViewState extends State<_HomeView> {
                         bank,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
                               : (isDark
@@ -629,23 +964,36 @@ class _HomeViewState extends State<_HomeView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Categories',
-              style: AppTextStyles.h4.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 3.5,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Popular Categories',
+                  style: AppTextStyles.h4.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
             if (_selectedCategory != null && _selectedCategory != 'All Categories')
               GestureDetector(
                 onTap: () => setState(() => _selectedCategory = null),
-                child: Text(
+                child: const Text(
                   'Clear',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -694,11 +1042,11 @@ class _HomeViewState extends State<_HomeView> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
-    final activeBg = isDark ? AppColors.primaryLight : AppColors.primary;
+    const activeBg = AppColors.primary;
     final inactiveBg = isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant;
     final inactiveFg = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     final borderColor = isSelected
-        ? activeBg
+        ? AppColors.secondary
         : (isDark ? AppColors.darkBorder : AppColors.border);
 
     return InkWell(
@@ -710,7 +1058,8 @@ class _HomeViewState extends State<_HomeView> {
         decoration: BoxDecoration(
           color: isSelected ? activeBg : inactiveBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: 1),
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1),
+          boxShadow: isSelected ? AppColors.redGlowShadow : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -719,7 +1068,7 @@ class _HomeViewState extends State<_HomeView> {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? Colors.white : inactiveFg,
+                color: isSelected ? AppColors.flashYellow : inactiveFg,
               ),
               const SizedBox(width: 5),
             ],
@@ -727,7 +1076,7 @@ class _HomeViewState extends State<_HomeView> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                 color: isSelected ? Colors.white : inactiveFg,
               ),
             ),
@@ -742,10 +1091,10 @@ class _HomeViewState extends State<_HomeView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? const Color(0xFF261D1D) : AppColors.secondarySoft,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.border,
+          color: AppColors.secondary.withValues(alpha: 0.8),
           width: 1,
         ),
       ),
@@ -754,13 +1103,13 @@ class _HomeViewState extends State<_HomeView> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.primaryLight : AppColors.primary)
-                  .withValues(alpha: 0.12),
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: AppColors.redGlowShadow,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.credit_card_rounded,
-              color: isDark ? AppColors.primaryLight : AppColors.primary,
+              color: AppColors.flashYellow,
               size: 24,
             ),
           ),
@@ -772,7 +1121,7 @@ class _HomeViewState extends State<_HomeView> {
                 Text(
                   l10n.text('chooseBanksCards'),
                   style: AppTextStyles.h4.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     fontSize: 14,
                     color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
@@ -789,8 +1138,10 @@ class _HomeViewState extends State<_HomeView> {
             ),
           ),
           const SizedBox(width: 8),
-          FilledButton.tonal(
+          FilledButton(
             style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -800,7 +1151,7 @@ class _HomeViewState extends State<_HomeView> {
             },
             child: Text(
               l10n.text('chooseCards'),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -824,21 +1175,30 @@ class _HomeViewState extends State<_HomeView> {
       children: [
         Row(
           children: [
+            Container(
+              width: 3.5,
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
             if (icon != null) ...[
-              Icon(icon, size: 18, color: iconColor),
+              Icon(icon, size: 18, color: iconColor ?? AppColors.primary),
               const SizedBox(width: 6),
             ],
             Text(
               title,
               style: AppTextStyles.h3.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 fontSize: 17,
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
@@ -847,7 +1207,7 @@ class _HomeViewState extends State<_HomeView> {
                 count.toString(),
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ),
@@ -857,22 +1217,22 @@ class _HomeViewState extends State<_HomeView> {
         if (onSeeAll != null)
           GestureDetector(
             onTap: onSeeAll,
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  actionLabel ?? 'See all',
+                  'See all',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: 2),
+                SizedBox(width: 2),
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 16,
-                  color: isDark ? AppColors.primaryLight : AppColors.primary,
+                  color: AppColors.primary,
                 ),
               ],
             ),

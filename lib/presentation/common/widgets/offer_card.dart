@@ -214,24 +214,79 @@ class _OfferCardState extends State<OfferCard> {
 
                 const SizedBox(height: 10),
 
-                // Hero Benefit Callout: Big bold discount
+                // Hero Benefit Callout: Big bold Temu-style discount callout
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      benefitText,
-                      style: AppTextStyles.h1.copyWith(
-                        fontSize: widget.compact ? 18 : 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE51D1D), Color(0xFFFF3333)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(7),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE51D1D).withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFFE600)),
+                          const SizedBox(width: 3),
+                          Text(
+                            benefitText,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    if (_expiringSoon)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD600), Color(0xFFFFAB00)],
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.local_fire_department_rounded,
+                              size: 11,
+                              color: Color(0xFF8B0000),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              l10n.endingSoon.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                                color: Color(0xFF8B0000),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
                 // Offer Title / Subtitle
                 Text(
@@ -240,10 +295,11 @@ class _OfferCardState extends State<OfferCard> {
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.body2.copyWith(
                     color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
+                        ? AppColors.darkTextPrimary
+                        : const Color(0xFF222222),
                     height: 1.35,
-                    fontSize: widget.compact ? 12 : 13,
+                    fontWeight: FontWeight.w500,
+                    fontSize: widget.compact ? 12 : 13.5,
                   ),
                 ),
 
@@ -292,41 +348,9 @@ class _OfferCardState extends State<OfferCard> {
                         label: _formatExpiryDate(offer.validity.validUntil),
                         isDark: isDark,
                       ),
-
-                    // Ending soon urgency badge
-                    if (_expiringSoon)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.urgentRed.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: AppColors.urgentRed.withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.local_fire_department_rounded,
-                              size: 11,
-                              color: AppColors.urgentRed,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              l10n.endingSoon,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.urgentRed,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
                 ),
+
               ],
             ),
           ),
@@ -346,12 +370,12 @@ class _OfferCardState extends State<OfferCard> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        color: isDark ? const Color(0xFF262830) : const Color(0xFFFFF9E6),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.border,
+          color: isDark ? const Color(0xFF3E3A20) : const Color(0xFFFFE082),
           width: 0.8,
         ),
       ),
@@ -361,15 +385,15 @@ class _OfferCardState extends State<OfferCard> {
           Icon(
             Icons.credit_card_outlined,
             size: 11,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            color: isDark ? const Color(0xFFFFD600) : const Color(0xFFB45309),
           ),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFFFFD600) : const Color(0xFF92400E),
             ),
           ),
         ],
@@ -391,19 +415,20 @@ class _OfferCardState extends State<OfferCard> {
   }) {
     final bg = isPrimaryTint
         ? (isDark
-            ? AppColors.primaryLight.withValues(alpha: 0.15)
-            : AppColors.primary.withValues(alpha: 0.08))
-        : (isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant);
+            ? AppColors.primary.withValues(alpha: 0.15)
+            : const Color(0xFFFFF0F0))
+        : (isDark ? AppColors.darkSurfaceVariant : const Color(0xFFF3F4F6));
     final fg = isPrimaryTint
         ? (isDark ? AppColors.primaryLight : AppColors.primary)
-        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary);
+        : (isDark ? AppColors.darkTextSecondary : const Color(0xFF4B5563));
     final border = isPrimaryTint
         ? (isDark
-            ? AppColors.primaryLight.withValues(alpha: 0.3)
-            : AppColors.primary.withValues(alpha: 0.2))
-        : (isDark ? AppColors.darkBorder : AppColors.border);
+            ? AppColors.primary.withValues(alpha: 0.3)
+            : const Color(0xFFFFCDD2))
+        : (isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB));
 
     return Container(
+
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: bg,

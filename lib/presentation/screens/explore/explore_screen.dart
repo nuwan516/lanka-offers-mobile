@@ -165,7 +165,29 @@ class _ExploreViewState extends State<_ExploreView> {
                 // ─ App Bar ─────────────────────────────────────────────────
                 SliverAppBar(
                   pinned: true,
-                  title: Text(l10n.text('allBankOffers')),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: AppColors.redGlowShadow,
+                        ),
+                        child: const Icon(
+                          Icons.explore_rounded,
+                          size: 16,
+                          color: AppColors.flashYellow,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.text('allBankOffers'),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
                   actions: [
                     IconButton(
                       tooltip: 'Full-screen map',
@@ -176,6 +198,8 @@ class _ExploreViewState extends State<_ExploreView> {
                     Badge(
                       isLabelVisible: activeFilterLabels.isNotEmpty,
                       label: Text('${activeFilterLabels.length}'),
+                      backgroundColor: AppColors.primary,
+                      textColor: Colors.white,
                       child: IconButton(
                         tooltip: l10n.text('filters'),
                         icon: const Icon(Icons.tune_rounded),
@@ -796,26 +820,29 @@ class _StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: active
-              ? color.withOpacity(0.12)
+              ? AppColors.primary
               : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: active
-                  ? color.withOpacity(0.4)
-                  : Colors.transparent),
+            color: active ? AppColors.secondary : Colors.transparent,
+            width: active ? 1.2 : 1,
+          ),
+          boxShadow: active ? AppColors.redGlowShadow : null,
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 14, color: color),
+          Icon(icon, size: 14, color: active ? AppColors.flashYellow : color),
           const SizedBox(width: 4),
-          Text('$label ($count)',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color)),
+          Text(
+            '$label ($count)',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: active ? Colors.white : color,
+            ),
+          ),
         ]),
       );
 }
@@ -856,30 +883,28 @@ class _NearbyToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : cs.surfaceContainerHighest,
+          color: isActive ? AppColors.flashYellow : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2))
-                ]
-              : [],
+          border: Border.all(
+            color: isActive ? const Color(0xFF8B1010) : Colors.transparent,
+            width: isActive ? 1.2 : 1,
+          ),
+          boxShadow: isActive ? AppColors.yellowGlowShadow : [],
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(
             isActive ? Icons.near_me_rounded : Icons.near_me_disabled,
             size: 14,
-            color: isActive ? Colors.white : cs.onSurfaceVariant,
+            color: isActive ? const Color(0xFF8B1010) : cs.onSurfaceVariant,
           ),
           const SizedBox(width: 5),
           Text(
             isActive ? 'Nearby ON' : 'Nearby',
             style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : cs.onSurfaceVariant),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: isActive ? const Color(0xFF8B1010) : cs.onSurfaceVariant,
+            ),
           ),
         ]),
       ),
@@ -942,23 +967,31 @@ class _CategoryPills extends StatelessWidget {
           final cat = categories[i];
           final sel = selected == cat;
           return FilterChip(
-            avatar: Icon(_icon(cat),
-                size: 14,
-                color: sel
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onSurfaceVariant),
-            label: Text(cat,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: sel
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurface)),
+            avatar: Icon(
+              _icon(cat),
+              size: 14,
+              color: sel ? AppColors.flashYellow : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            label: Text(
+              cat,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: sel ? FontWeight.w800 : FontWeight.w600,
+                color: sel ? Colors.white : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             selected: sel,
             onSelected: (_) => onSelected(cat),
             selectedColor: AppColors.primary,
-            checkmarkColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            checkmarkColor: AppColors.flashYellow,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: sel ? AppColors.secondary : Colors.transparent,
+                width: sel ? 1.5 : 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             visualDensity: VisualDensity.compact,
           );
         },

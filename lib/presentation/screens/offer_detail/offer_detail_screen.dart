@@ -249,46 +249,103 @@ class _OfferDetailContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Benefit Highlight & Expiry Status
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      offer.getDisplayValue(),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+              // High-Energy Deal Banner (Temu-Inspired)
+              Builder(
+                builder: (context) {
+                  final daysLeft = offer.validity.validUntil.difference(DateTime.now()).inDays;
+                  final isEndingSoon = !expired &&
+                      !offer.validity.hasNoConfiguredExpiry &&
+                      daysLeft >= 0 &&
+                      daysLeft <= 7;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.heroRedGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppColors.redGlowShadow,
                     ),
-                  ),
-                  if (expired)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        border: Border.all(color: Colors.red.shade300),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red.shade700),
-                          const SizedBox(width: 4),
-                          Text(
-                            l10n.text('expired'),
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.bolt_rounded,
+                            color: AppColors.flashYellow,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                offer.getDisplayValue(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'VERIFIED BANK DISCOUNT',
+                                style: TextStyle(
+                                  color: AppColors.secondarySoft,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (expired)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              l10n.text('expired').toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          )
+                        else if (isEndingSoon)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.yellowFlashGradient,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: AppColors.yellowGlowShadow,
+                            ),
+                            child: Text(
+                              '${daysLeft == 0 ? "ENDS TODAY" : "$daysLeft DAYS LEFT"} 🔥',
+                              style: const TextStyle(
+                                color: Color(0xFF8B1010),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
-                ],
+                  );
+                },
               ),
-              const SizedBox(height: 6),
 
               // Merchant & Offer Title
               Text(
@@ -563,17 +620,99 @@ class _OfferDetailContent extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // Save Offer Action Button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: onToggleSaved,
-                  icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_outline),
-                  label: Text(isSaved ? l10n.saved : l10n.saveOffer),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+              // Action Buttons Row (Save + Claim/Redeem)
+              Row(
+                children: [
+                  // Save Button
+                  InkWell(
+                    onTap: onToggleSaved,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isSaved
+                            ? AppColors.primary
+                            : (Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkSurfaceVariant
+                                : AppColors.surfaceVariant),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSaved
+                              ? AppColors.secondary
+                              : (Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.darkBorder
+                                  : AppColors.border),
+                          width: isSaved ? 1.5 : 1,
+                        ),
+                        boxShadow: isSaved ? AppColors.redGlowShadow : null,
+                      ),
+                      child: Icon(
+                        isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                        color: isSaved ? AppColors.flashYellow : Theme.of(context).colorScheme.onSurface,
+                        size: 22,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  // Primary CTA Button
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: AppColors.redGlowShadow,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () {
+                            if (offer.contact?.website != null) {
+                              launchUrl(
+                                Uri.parse(offer.contact!.website!),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } else if (physicalLocations.isNotEmpty) {
+                              _openDirections(physicalLocations.first);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Offer active at ${offer.merchantName} with ${offer.bankName} cards!'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.bolt_rounded,
+                                  color: AppColors.flashYellow,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  offer.contact?.website != null
+                                      ? 'VISIT WEBSITE'
+                                      : (physicalLocations.isNotEmpty ? 'GET DIRECTIONS' : 'HOW TO CLAIM'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
