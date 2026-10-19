@@ -14,7 +14,7 @@ class ShopOffer extends BaseOffer {
   final DateTime? verificationDate;
   final Restrictions? restrictions;
 
-  ShopOffer({
+  const ShopOffer({
     required super.uniqueId,
     required super.title,
     required super.description,

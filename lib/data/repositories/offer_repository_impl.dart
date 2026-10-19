@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../../domain/repositories/offer_repository.dart';
 import '../../domain/entities/bank_offer.dart';
+import '../../domain/entities/bank_summary.dart';
 import '../../core/enums/offer_type.dart';
 import '../datasources/remote/api_offers_datasource.dart';
 
@@ -10,18 +11,36 @@ class OfferRepositoryImpl implements OfferRepository {
   OfferRepositoryImpl() : _api = ApiOffersDataSource();
 
   @override
-  Future<List<dynamic>> getAllOffers() => _api.fetchOffers();
+  Future<List<dynamic>> getAllOffers() => _api.fetchAllOffers();
+
+  @override
+  Future<List<dynamic>> getOffersByBank(String bankCode) =>
+      _api.fetchAllOffers(bank: bankCode);
+
+  @override
+  Future<List<dynamic>> queryOffers({
+    String? bank,
+    String? category,
+    String? locationScope,
+  }) => _api.fetchAllOffers(
+    bank: bank,
+    category: category,
+    locationScope: locationScope,
+  );
+
+  @override
+  Future<List<BankSummary>> getBanks() => _api.fetchBanks();
 
   @override
   Future<List<dynamic>> getOffersByType(OfferType type) {
     // Only bank offers exist in the API; other types return empty.
-    if (type == OfferType.bankOffer) return _api.fetchOffers();
+    if (type == OfferType.bankOffer) return _api.fetchAllOffers();
     return Future.value([]);
   }
 
   @override
   Future<List<dynamic>> searchOffers(String query) =>
-      _api.fetchOffers(search: query);
+      _api.fetchAllOffers(search: query);
 
   @override
   Future<List<dynamic>> filterOffers({
@@ -33,7 +52,7 @@ class OfferRepositoryImpl implements OfferRepository {
     double? longitude,
   }) async {
     // Backend-api supports category and search filtering directly
-    final offers = await _api.fetchOffers(category: category);
+    final offers = await _api.fetchAllOffers(category: category);
 
     var result = offers;
 
@@ -42,23 +61,30 @@ class OfferRepositoryImpl implements OfferRepository {
     }
 
     if (district != null && district.isNotEmpty) {
-      result = result.where((o) {
-        return o.locations.any(
-          (loc) => loc.district.toLowerCase() == district.toLowerCase(),
-        );
-      }).toList();
+      result =
+          result.where((o) {
+            return o.locations.any(
+              (loc) => loc.district.toLowerCase() == district.toLowerCase(),
+            );
+          }).toList();
     }
 
     if (maxDistance != null && latitude != null && longitude != null) {
-      result = result.where((o) {
-        final locs = o.locations;
-        if (locs.isEmpty) return false;
-        for (final loc in locs) {
-          final dist = _distKm(latitude, longitude, loc.latitude, loc.longitude);
-          if (dist <= maxDistance) return true;
-        }
-        return false;
-      }).toList();
+      result =
+          result.where((o) {
+            final locs = o.locations;
+            if (locs.isEmpty) return false;
+            for (final loc in locs) {
+              final dist = _distKm(
+                latitude,
+                longitude,
+                loc.latitude,
+                loc.longitude,
+              );
+              if (dist <= maxDistance) return true;
+            }
+            return false;
+          }).toList();
     }
 
     return result;
@@ -81,7 +107,7 @@ class OfferRepositoryImpl implements OfferRepository {
       // Graceful fallback to client-side distance calculation if offline or unseeded
     }
 
-    final offers = await _api.fetchOffers();
+    final offers = await _api.fetchAllOffers();
     return offers.where((o) {
       // Only offers with confirmed physical branch applicability can be nearby
       if (o.locationScope == 'ONLINE' ||
@@ -93,7 +119,8 @@ class OfferRepositoryImpl implements OfferRepository {
       final locs = o.locations;
       if (locs.isEmpty) return false;
       return locs.any(
-        (loc) => _distKm(latitude, longitude, loc.latitude, loc.longitude) <= radius,
+        (loc) =>
+            _distKm(latitude, longitude, loc.latitude, loc.longitude) <= radius,
       );
     }).toList();
   }
@@ -107,9 +134,11 @@ class OfferRepositoryImpl implements OfferRepository {
     if (current == null) return [];
     final all = await getAllOffers();
     return all
-        .where((o) =>
-            o.uniqueId != offerId &&
-            o.category == (current as BankOffer).category)
+        .where(
+          (o) =>
+              o.uniqueId != offerId &&
+              o.category == (current as BankOffer).category,
+        )
         .take(5)
         .toList();
   }
@@ -119,7 +148,8 @@ class OfferRepositoryImpl implements OfferRepository {
     const r = 6371.0;
     final dLat = (lat2 - lat1) * math.pi / 180;
     final dLon = (lon2 - lon1) * math.pi / 180;
-    final a = math.pow(math.sin(dLat / 2), 2) +
+    final a =
+        math.pow(math.sin(dLat / 2), 2) +
         math.cos(lat1 * math.pi / 180) *
             math.cos(lat2 * math.pi / 180) *
             math.pow(math.sin(dLon / 2), 2);

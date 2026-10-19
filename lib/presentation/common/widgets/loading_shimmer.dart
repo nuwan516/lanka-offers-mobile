@@ -14,29 +14,28 @@ class LoadingShimmer extends StatelessWidget {
     this.height = 20,
     this.borderRadius = 4,
     super.key,
-  })  : isFeed = false,
-        isCard = false;
+  }) : isFeed = false,
+       isCard = false;
 
-  const LoadingShimmer.card({
-    super.key,
-  })  : width = double.infinity,
-        height = 140,
-        borderRadius = 16,
-        isFeed = false,
-        isCard = true;
+  const LoadingShimmer.card({super.key})
+    : width = double.infinity,
+      height = 140,
+      borderRadius = 16,
+      isFeed = false,
+      isCard = true;
 
-  const LoadingShimmer.feed({
-    super.key,
-  })  : width = double.infinity,
-        height = double.infinity,
-        borderRadius = 16,
-        isFeed = true,
-        isCard = false;
+  const LoadingShimmer.feed({super.key})
+    : width = double.infinity,
+      height = double.infinity,
+      borderRadius = 16,
+      isFeed = true,
+      isCard = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final baseColor =
+        isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
     final highlightColor =
         isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC);
 
@@ -66,18 +65,19 @@ class LoadingShimmer extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 4,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, __) => Shimmer.fromColors(
-                baseColor: baseColor,
-                highlightColor: highlightColor,
-                child: Container(
-                  width: 90,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    borderRadius: BorderRadius.circular(18),
+              itemBuilder:
+                  (_, __) => Shimmer.fromColors(
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                    child: Container(
+                      width: 90,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
                   ),
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -108,7 +108,11 @@ class LoadingShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildCardSkeleton(Color baseColor, Color highlightColor, bool isDark) {
+  Widget _buildCardSkeleton(
+    Color baseColor,
+    Color highlightColor,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

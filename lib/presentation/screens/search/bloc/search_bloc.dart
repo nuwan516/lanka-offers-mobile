@@ -4,12 +4,17 @@ import '../../../../domain/usecases/search_offers.dart';
 import '../../../../domain/repositories/user_repository.dart';
 import 'search_event.dart';
 import 'search_state.dart';
+import '../../../../core/semantics/offer_semantics.dart';
 import '../../../../domain/entities/bank_offer.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final SearchOffers searchOffers;
   final UserRepository userRepository;
   Timer? _debounceTimer;
+
+  /// Identifies the latest search so a slower, older response can never
+  /// replace newer results.
+  int _searchId = 0;
 
   SearchBloc({required this.searchOffers, required this.userRepository})
     : super(SearchInitial()) {
@@ -29,7 +34,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     _debounceTimer?.cancel();
 
-    if (event.query.isEmpty) {
+    if (event.query.trim().isEmpty) {
+      _searchId++;
       final current = state;
       emit(
         SearchInitial(
@@ -51,20 +57,26 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     PerformSearch event,
     Emitter<SearchState> emit,
   ) async {
-    if (event.query.isEmpty) {
+    if (event.query.trim().isEmpty) {
       emit(SearchInitial());
       return;
     }
 
+    final id = ++_searchId;
     emit(SearchLoading());
 
     try {
-      await userRepository.addRecentSearch(event.query);
+      await userRepository.addRecentSearch(event.query.trim());
       final results =
-          (await searchOffers(event.query)).whereType<BankOffer>().toList();
+          (await searchOffers(event.query.trim()))
+              .whereType<BankOffer>()
+              .where((o) => !OfferSemantics.isExpired(o.validity))
+              .toList();
 
+      if (id != _searchId) return;
       emit(SearchResultsLoaded(results: results, query: event.query));
     } catch (e) {
+      if (id != _searchId) return;
       emit(SearchError(message: 'search_failed'));
     }
   }
@@ -73,6 +85,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     ClearSearch event,
     Emitter<SearchState> emit,
   ) async {
+    _debounceTimer?.cancel();
+    _searchId++;
     final current = state;
     emit(
       SearchInitial(

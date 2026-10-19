@@ -2,6 +2,7 @@ import 'base_offer.dart';
 import 'deal.dart';
 
 class Promotion extends BaseOffer {
+  @override
   final String providerName;
   final String promotionType; // 'flash_sale', 'limited_time', 'seasonal'
   final String urgencyLevel; // 'urgent', 'high', 'normal'
@@ -12,7 +13,7 @@ class Promotion extends BaseOffer {
   final int? flashDurationHours;
   final bool countdownEnabled;
 
-  Promotion({
+  const Promotion({
     required super.uniqueId,
     required super.title,
     required super.description,

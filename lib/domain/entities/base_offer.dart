@@ -19,7 +19,7 @@ abstract class BaseOffer extends Equatable {
   final QualityScore quality;
   final EngagementMetrics? metrics;
 
-  BaseOffer({
+  const BaseOffer({
     required this.uniqueId,
     required this.title,
     required this.description,

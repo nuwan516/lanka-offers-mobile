@@ -1,21 +1,22 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/semantics/offer_semantics.dart';
 import '../../../core/services/phase_two_survey_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/location.dart';
-import '../../../domain/entities/validity_period.dart';
 import '../../../domain/repositories/offer_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
 import '../../common/widgets/bank_badge.dart';
+import '../../common/widgets/offer_presentation.dart';
+import '../../common/widgets/state_views.dart';
 
 class OfferDetailScreen extends StatefulWidget {
   const OfferDetailScreen({
@@ -38,18 +39,31 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
   late int _currentIndex;
   late List<BankOffer> _offers;
   bool _isLoadingSingle = false;
+  bool _singleFailed = false;
   final Set<String> _savedOfferIds = {};
+
+  /// List endpoints return summaries; terms and transaction limits only exist
+  /// on the detail endpoint, so the visible page loads it on demand.
+  final Map<String, BankOffer> _full = {};
+  final Set<String> _fetching = {};
 
   @override
   void initState() {
     super.initState();
-    if (widget.contextOffers != null && widget.contextOffers!.isNotEmpty) {
-      _offers = List<BankOffer>.from(widget.contextOffers!);
-      final idx = widget.initialIndex ??
+    _setUp();
+  }
+
+  void _setUp() {
+    final context = widget.contextOffers;
+    if (context != null && context.isNotEmpty) {
+      _offers = List<BankOffer>.from(context);
+      final idx =
+          widget.initialIndex ??
           _offers.indexWhere((o) => o.uniqueId == widget.offerId);
       _currentIndex = idx >= 0 ? idx : 0;
       _pageController = PageController(initialPage: _currentIndex);
       _checkSavedStatus(_offers[_currentIndex].uniqueId);
+      _ensureFull(_offers[_currentIndex]);
       _recordView();
     } else {
       _offers = [];
@@ -64,19 +78,8 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.offerId != widget.offerId ||
         oldWidget.contextOffers != widget.contextOffers) {
-      if (widget.contextOffers != null && widget.contextOffers!.isNotEmpty) {
-        _offers = List<BankOffer>.from(widget.contextOffers!);
-        final idx = widget.initialIndex ??
-            _offers.indexWhere((o) => o.uniqueId == widget.offerId);
-        _currentIndex = idx >= 0 ? idx : 0;
-        _pageController.dispose();
-        _pageController = PageController(initialPage: _currentIndex);
-        _checkSavedStatus(_offers[_currentIndex].uniqueId);
-      } else {
-        _offers = [];
-        _currentIndex = 0;
-        _loadSingleOffer();
-      }
+      _pageController.dispose();
+      _setUp();
     }
   }
 
@@ -97,44 +100,62 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
       final saved = await getIt<UserRepository>().isOfferSaved(id);
       if (mounted) {
         setState(() {
-          if (saved) {
-            _savedOfferIds.add(id);
-          } else {
-            _savedOfferIds.remove(id);
-          }
+          saved ? _savedOfferIds.add(id) : _savedOfferIds.remove(id);
         });
       }
     } catch (_) {}
   }
 
+  Future<void> _ensureFull(BankOffer offer) async {
+    final id = offer.uniqueId;
+    if (_full.containsKey(id) || !_fetching.add(id)) return;
+    try {
+      final value = await getIt<OfferRepository>().getOfferById(id);
+      if (mounted && value is BankOffer) setState(() => _full[id] = value);
+    } catch (_) {
+      // The summary stays on screen; the section that needs the detail simply
+      // shows what the summary has.
+    } finally {
+      _fetching.remove(id);
+    }
+  }
+
   Future<void> _loadSingleOffer() async {
-    setState(() => _isLoadingSingle = true);
+    setState(() {
+      _isLoadingSingle = true;
+      _singleFailed = false;
+    });
     await _recordView();
     try {
       final saved = await getIt<UserRepository>().isOfferSaved(widget.offerId);
       final value = await getIt<OfferRepository>().getOfferById(widget.offerId);
+      if (!mounted) return;
+      setState(() {
+        _isLoadingSingle = false;
+        if (saved) _savedOfferIds.add(widget.offerId);
+        if (value is BankOffer) {
+          _offers = [value];
+          _full[value.uniqueId] = value;
+        }
+      });
+    } catch (_) {
       if (mounted) {
         setState(() {
           _isLoadingSingle = false;
-          if (saved) _savedOfferIds.add(widget.offerId);
-          if (value is BankOffer) {
-            _offers = [value];
-          }
+          _singleFailed = true;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingSingle = false);
     }
   }
 
   Future<void> _toggleSaved(BankOffer offer) async {
-    final isSaved = _savedOfferIds.contains(offer.uniqueId);
-    if (isSaved) {
-      await getIt<UserRepository>().unsaveOffer(offer.uniqueId);
-      setState(() => _savedOfferIds.remove(offer.uniqueId));
+    final repo = getIt<UserRepository>();
+    if (_savedOfferIds.contains(offer.uniqueId)) {
+      await repo.unsaveOffer(offer.uniqueId);
+      if (mounted) setState(() => _savedOfferIds.remove(offer.uniqueId));
     } else {
-      await getIt<UserRepository>().saveOffer(offer.uniqueId);
-      setState(() => _savedOfferIds.add(offer.uniqueId));
+      await repo.saveOffer(offer.uniqueId);
+      if (mounted) setState(() => _savedOfferIds.add(offer.uniqueId));
     }
   }
 
@@ -152,7 +173,13 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
     if (_offers.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.offerDetails)),
-        body: Center(child: Text(l10n.text('noOffers'))),
+        body:
+            _singleFailed
+                ? LoadFailedView(onRetry: _loadSingleOffer)
+                : StateMessage(
+                  icon: Icons.search_off_rounded,
+                  title: l10n.text('noOffers'),
+                ),
       );
     }
 
@@ -166,10 +193,13 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
             Text(l10n.offerDetails, style: const TextStyle(fontSize: 18)),
             if (hasMultiple)
               Text(
-                'Offer ${_currentIndex + 1} of ${_offers.length}',
+                l10n.format('offerPosition', {
+                  'current': _currentIndex + 1,
+                  'total': _offers.length,
+                }),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
           ],
         ),
@@ -191,13 +221,14 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
         onPageChanged: (index) {
           setState(() => _currentIndex = index);
           _checkSavedStatus(_offers[index].uniqueId);
+          _ensureFull(_offers[index]);
         },
         itemBuilder: (context, index) {
-          final offer = _offers[index];
-          final isSaved = _savedOfferIds.contains(offer.uniqueId);
-          return _OfferDetailContent(
+          final summary = _offers[index];
+          final offer = _full[summary.uniqueId] ?? summary;
+          return OfferDetailContent(
             offer: offer,
-            isSaved: isSaved,
+            isSaved: _savedOfferIds.contains(offer.uniqueId),
             onToggleSaved: () => _toggleSaved(offer),
           );
         },
@@ -206,519 +237,293 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
   }
 }
 
-class _OfferDetailContent extends StatelessWidget {
-  const _OfferDetailContent({
+/// The body of one offer. Every figure shown comes from the source data: the
+/// discount keeps the bank's wording, spend limits keep their exact meaning,
+/// and anything the source did not state is shown as not specified.
+class OfferDetailContent extends StatelessWidget {
+  const OfferDetailContent({
+    super.key,
     required this.offer,
     required this.isSaved,
     required this.onToggleSaved,
+    this.now,
   });
 
   final BankOffer offer;
   final bool isSaved;
   final VoidCallback onToggleSaved;
 
-  static final _currencyFormat = NumberFormat('#,##0', 'en_US');
+  /// Overridable for tests.
+  final DateTime? now;
+
+  static final _currency = NumberFormat('#,##0', 'en_US');
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final expired = offer.validity.validUntil.isBefore(DateTime.now());
-    final image = offer.featuredImage ??
-        (offer.images.isNotEmpty ? offer.images.first : null);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final secondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
-    final physicalLocations = offer.locations.where(_validCoordinates).toList();
+    final expired = OfferSemantics.isExpired(offer.validity, now: now);
+    final validity = OfferPresentation.validity(l10n, offer.validity, now: now);
+    final benefit = OfferPresentation.benefit(l10n, offer);
+    final branches =
+        OfferSemantics.confirmedBranches(
+          offer,
+        ).where(_validCoordinates).toList();
+    final pinnable = branches.isNotEmpty && OfferSemantics.canShowOnMap(offer);
+    final areaOnly =
+        offer.locations.isNotEmpty &&
+        OfferSemantics.confirmedBranches(offer).isEmpty &&
+        offer.locationScope != 'ONLINE' &&
+        offer.locationScope != 'NATIONWIDE';
+    final terms = offer.generalTerms;
+    final statedLimits = [
+      ...OfferSemantics.minSpendStatements(terms),
+      ...OfferSemantics.capStatements(terms),
+    ];
 
     return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
-        // Hero Image
-        SizedBox(
-          height: 220,
-          child: image == null || image.isEmpty
-              ? const _DetailPlaceholder()
-              : CachedNetworkImage(
-                  imageUrl: image,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => const _DetailPlaceholder(),
-                ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    offer.merchantName.isNotEmpty
+                        ? offer.merchantName
+                        : offer.title,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  BankBadge(bankName: offer.bankCode ?? offer.bankName),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: isSaved ? l10n.offerUnsaved : l10n.saveOffer,
+              onPressed: onToggleSaved,
+              icon: Icon(
+                isSaved ? Icons.favorite : Icons.favorite_border,
+                color: isSaved ? AppColors.error : secondary,
+              ),
+            ),
+          ],
+        ),
+        if (expired) ...[
+          const SizedBox(height: 12),
+          _Notice(
+            icon: Icons.event_busy_outlined,
+            text: l10n.text('offerExpiredNotice'),
+            color: AppColors.error,
+          ),
+        ],
+        if (benefit != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            benefit,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.primaryLight : AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.text('detailDiscountNote'),
+            style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Text(offer.title, style: TextStyle(color: secondary, height: 1.4)),
+
+        _Section(
+          title: l10n.validUntil,
+          child: Text(
+            validity.text,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: validity.color(isDark),
+            ),
+          ),
         ),
 
-        Padding(
-          padding: const EdgeInsets.all(16),
+        _Section(
+          title: l10n.text('detailEligibility'),
+          child: _eligibility(l10n, secondary),
+        ),
+
+        if (offer.minTransaction != null ||
+            offer.maxTransaction != null ||
+            statedLimits.isNotEmpty)
+          _Section(
+            title: l10n.text('detailTerms'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (offer.minTransaction != null)
+                  _Fact(
+                    l10n.text('detailMinTransaction'),
+                    'LKR ${_currency.format(offer.minTransaction)}',
+                  ),
+                if (offer.maxTransaction != null)
+                  _Fact(
+                    l10n.text('detailMaxTransaction'),
+                    'LKR ${_currency.format(offer.maxTransaction)}',
+                  ),
+                if (statedLimits.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.text('detailFromTerms'),
+                    style: TextStyle(color: secondary, fontSize: 12.5),
+                  ),
+                  for (final line in statedLimits) _Bullet('“$line”'),
+                ],
+              ],
+            ),
+          ),
+
+        _Section(
+          title: l10n.text('detailWhereApplies'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // High-Energy Deal Banner (Temu-Inspired)
-              Builder(
-                builder: (context) {
-                  final daysLeft = offer.validity.validUntil.difference(DateTime.now()).inDays;
-                  final isEndingSoon = !expired &&
-                      !offer.validity.hasNoConfiguredExpiry &&
-                      daysLeft >= 0 &&
-                      daysLeft <= 7;
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.heroRedGradient,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: AppColors.redGlowShadow,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.bolt_rounded,
-                            color: AppColors.flashYellow,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                offer.getDisplayValue(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.5,
-                                  height: 1.1,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'VERIFIED BANK DISCOUNT',
-                                style: TextStyle(
-                                  color: AppColors.secondarySoft,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (expired)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              l10n.text('expired').toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          )
-                        else if (isEndingSoon)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.yellowFlashGradient,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: AppColors.yellowGlowShadow,
-                            ),
-                            child: Text(
-                              '${daysLeft == 0 ? "ENDS TODAY" : "$daysLeft DAYS LEFT"} 🔥',
-                              style: const TextStyle(
-                                color: Color(0xFF8B1010),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-
-              // Merchant & Offer Title
               Text(
-                offer.merchantName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                _scopeLabel(l10n),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 6),
-              if (offer.bankName.isNotEmpty)
-                BankBadge(bankName: offer.bankName),
-              const SizedBox(height: 6),
-              Text(
-                offer.title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-
-              const Divider(height: 28),
-
-              // Bank & Card Eligibility Section
-              _SectionHeading(title: 'Bank & Card Eligibility'),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    _InfoRow(
-                      icon: Icons.account_balance,
-                      label: l10n.bank,
-                      value: offer.bankName,
-                    ),
-                    const Divider(height: 16),
-                    _InfoRow(
-                      icon: Icons.credit_card,
-                      label: l10n.text('eligibleCards'),
-                      value: offer.applicableCards.isNotEmpty
-                          ? offer.applicableCards.map(_friendly).join(', ')
-                          : (offer.cardEligibility?.displaySummary ?? 'All Cardholders'),
-                    ),
-                    if (offer.cardEligibility != null && offer.cardEligibility!.hasExclusions) ...[
-                      const Divider(height: 16),
-                      _InfoRow(
-                        icon: Icons.block,
-                        label: 'Excluded Cards',
-                        value: offer.cardEligibility!.excludedCards.join(', '),
-                        valueColor: Colors.red.shade700,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Validity & Spend Limits
-              _SectionHeading(title: 'Offer Validity & Terms'),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    _InfoRow(
-                      icon: Icons.calendar_today_outlined,
-                      label: l10n.validUntil,
-                      value: _formatValidity(offer.validity),
-                    ),
-                    if (offer.validity.daysApplicable != null) ...[
-                      const Divider(height: 16),
-                      _InfoRow(
-                        icon: Icons.today,
-                        label: 'Applicable Days',
-                        value: offer.validity.daysApplicable!,
-                      ),
-                    ],
-                    if (offer.validity.timeRestrictions != null) ...[
-                      const Divider(height: 16),
-                      _InfoRow(
-                        icon: Icons.schedule,
-                        label: 'Applicable Times',
-                        value: offer.validity.timeRestrictions!,
-                      ),
-                    ],
-                    if (offer.minTransaction != null || offer.maxTransaction != null) ...[
-                      const Divider(height: 16),
-                      _InfoRow(
-                        icon: Icons.payments_outlined,
-                        label: 'Transaction Spend Limit',
-                        value: _formatSpendLimit(offer.minTransaction, offer.maxTransaction),
-                      ),
-                    ],
-                    const Divider(height: 16),
-                    _InfoRow(
-                      icon: Icons.category_outlined,
-                      label: l10n.category,
-                      value: offer.category,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Description
-              if (offer.description.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                _SectionHeading(title: 'Details'),
-                const SizedBox(height: 8),
-                Text(
-                  offer.description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
-                ),
-              ],
-
-              // Installment Plans
-              if (offer.installmentPlans?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 20),
-                _SectionHeading(title: 'Installment Plans'),
-                const SizedBox(height: 8),
-                for (final plan in offer.installmentPlans!)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Expanded(child: Text(plan.description)),
-                      ],
-                    ),
-                  ),
-              ],
-
-              // Key Conditions
-              if (offer.restrictions != null &&
-                  offer.restrictions!.keyRestrictions.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                _SectionHeading(title: l10n.termsAndConditions),
-                const SizedBox(height: 8),
-                if (offer.restrictions!.bookingRequired != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      'Booking required: ${offer.restrictions!.bookingRequired! ? 'Yes' : 'No'}',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                for (final item in offer.restrictions!.keyRestrictions)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Expanded(child: Text(item)),
-                      ],
-                    ),
-                  ),
-              ],
-
-              // Location Applicability
-              const SizedBox(height: 24),
-              _SectionHeading(title: 'Where You Can Use It'),
-              const SizedBox(height: 8),
-              if (offer.locationScope != null)
-                _LocationScopeBadge(scope: offer.locationScope!),
-
-              // Embedded OpenStreetMap for confirmed physical locations
-              if (physicalLocations.isNotEmpty &&
+              if (offer.merchantLocation != null &&
                   offer.locationScope != 'ONLINE' &&
                   offer.locationScope != 'NATIONWIDE') ...[
+                const SizedBox(height: 4),
+                Text(
+                  offer.merchantLocation!,
+                  style: TextStyle(color: secondary, height: 1.4),
+                ),
+              ],
+              if (areaOnly) ...[
+                const SizedBox(height: 4),
+                Text(
+                  l10n.text('detailAreaOnly'),
+                  style: TextStyle(color: secondary, height: 1.4),
+                ),
+              ],
+              if (pinnable) ...[
                 const SizedBox(height: 12),
                 _OfferLocationMap(
-                  locations: physicalLocations,
+                  locations: branches,
                   merchantName: offer.merchantName,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Confirmed Branches (${physicalLocations.length})',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                for (final location in physicalLocations)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.place_outlined,
-                          size: 20,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                location.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              if (location.address.isNotEmpty)
-                                Text(
-                                  location.address,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: l10n.getDirections,
-                          icon: const Icon(Icons.directions_outlined),
-                          color: Theme.of(context).colorScheme.primary,
-                          onPressed: () => _openDirections(location),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-
-              // Contact & Official Source
-              if (offer.contact != null) ...[
-                const SizedBox(height: 20),
-                _SectionHeading(title: l10n.contactInfo),
-                const SizedBox(height: 8),
-                if (offer.contact!.phone?.isNotEmpty ?? false)
-                  _InfoRow(
-                    icon: Icons.phone_outlined,
-                    label: l10n.phone,
-                    value: offer.contact!.phone!.join(', '),
-                  ),
-                if (offer.contact!.website != null)
+                for (final loc in offer.locations
+                    .where(_validCoordinates)
+                    .take(5))
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.open_in_new),
-                    title: Text(l10n.text('offerInformation')),
-                    subtitle: Text(
-                      offer.contact!.website!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    dense: true,
+                    leading: const Icon(Icons.place_outlined),
+                    title: Text(
+                      loc.name.isNotEmpty ? loc.name : offer.merchantName,
                     ),
-                    onTap: () => launchUrl(
-                      Uri.parse(offer.contact!.website!),
-                      mode: LaunchMode.externalApplication,
+                    subtitle: loc.address.isNotEmpty ? Text(loc.address) : null,
+                    trailing: IconButton(
+                      tooltip: l10n.getDirections,
+                      icon: const Icon(Icons.directions_outlined),
+                      onPressed: () => _openDirections(loc),
                     ),
                   ),
               ],
-
-              const SizedBox(height: 24),
-
-              // Action Buttons Row (Save + Claim/Redeem)
-              Row(
-                children: [
-                  // Save Button
-                  InkWell(
-                    onTap: onToggleSaved,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isSaved
-                            ? AppColors.primary
-                            : (Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.darkSurfaceVariant
-                                : AppColors.surfaceVariant),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSaved
-                              ? AppColors.secondary
-                              : (Theme.of(context).brightness == Brightness.dark
-                                  ? AppColors.darkBorder
-                                  : AppColors.border),
-                          width: isSaved ? 1.5 : 1,
-                        ),
-                        boxShadow: isSaved ? AppColors.redGlowShadow : null,
-                      ),
-                      child: Icon(
-                        isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                        color: isSaved ? AppColors.flashYellow : Theme.of(context).colorScheme.onSurface,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Primary CTA Button
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: AppColors.redGlowShadow,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () {
-                            if (offer.contact?.website != null) {
-                              launchUrl(
-                                Uri.parse(offer.contact!.website!),
-                                mode: LaunchMode.externalApplication,
-                              );
-                            } else if (physicalLocations.isNotEmpty) {
-                              _openDirections(physicalLocations.first);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Offer active at ${offer.merchantName} with ${offer.bankName} cards!'),
-                                  backgroundColor: AppColors.primary,
-                                ),
-                              );
-                            }
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.bolt_rounded,
-                                  color: AppColors.flashYellow,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  offer.contact?.website != null
-                                      ? 'VISIT WEBSITE'
-                                      : (physicalLocations.isNotEmpty ? 'GET DIRECTIONS' : 'HOW TO CLAIM'),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
+
+        if (terms.isNotEmpty || (offer.terms?.isNotEmpty ?? false))
+          _Section(
+            title: l10n.termsAndConditions,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final t in terms) _Bullet(t),
+                if (offer.terms != null && offer.terms!.isNotEmpty)
+                  Text(offer.terms!, style: const TextStyle(height: 1.45)),
+              ],
+            ),
+          ),
+
+        if (_safeUrl(offer.sourceUrl) != null) ...[
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed:
+                () => launchUrl(
+                  _safeUrl(offer.sourceUrl)!,
+                  mode: LaunchMode.externalApplication,
+                ),
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: Text(l10n.text('detailViewSource')),
+          ),
+        ],
       ],
     );
+  }
+
+  Widget _eligibility(AppLocalizations l10n, Color secondary) {
+    final e = offer.cardEligibility;
+    final chips =
+        <String>{
+          if (e != null) ...e.includedCards,
+          if (e != null) ...e.cardTypes,
+          if (e != null) ...e.networks,
+          if (e == null || e.isEmpty) ...offer.applicableCards,
+        }.toList();
+
+    if (chips.isEmpty && (e == null || e.restrictions.isEmpty)) {
+      return Text(
+        l10n.text('detailEligibilityUnknown'),
+        style: TextStyle(color: secondary, height: 1.4),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (chips.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final c in chips) Chip(label: Text(c))],
+          ),
+        if (e != null && e.excludedCards.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final c in e.excludedCards) _Bullet('✕ $c'),
+        ],
+        if (e != null) ...[for (final r in e.restrictions) _Bullet(r)],
+      ],
+    );
+  }
+
+  String _scopeLabel(AppLocalizations l10n) => switch (offer.locationScope) {
+    'ONLINE' => l10n.text('detailScopeOnline'),
+    'NATIONWIDE' => l10n.text('detailScopeNationwide'),
+    'SELECTED_OUTLETS' => l10n.text('detailScopeSelected'),
+    'EXPLICIT_BRANCH' || 'MULTIPLE_BRANCHES' =>
+      OfferSemantics.confirmedBranches(offer).isNotEmpty
+          ? l10n.text('detailScopeBranch')
+          : l10n.text('detailScopeUnresolved'),
+    _ => l10n.text('detailScopeUnresolved'),
+  };
+
+  static Uri? _safeUrl(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final uri = Uri.tryParse(raw.trim());
+    if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+      return null;
+    }
+    return uri;
   }
 
   static bool _validCoordinates(Location location) =>
@@ -729,201 +534,106 @@ class _OfferDetailContent extends StatelessWidget {
       !(location.latitude == 0 && location.longitude == 0);
 
   static Future<void> _openDirections(Location location) => launchUrl(
-        Uri.parse(
-          'https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}',
-        ),
-        mode: LaunchMode.externalApplication,
-      );
-
-  static String _friendly(String value) =>
-      value.replaceAll('_', ' ').toUpperCase();
-
-  static String _formatValidity(ValidityPeriod validity) {
-    if (validity.validUntil.isAtSameMomentAs(ValidityPeriod.noExpirySentinel)) {
-      return 'No expiry date set by bank';
-    }
-    final formatter = DateFormat('d MMM yyyy');
-    if (!validity.validFrom.isAtSameMomentAs(ValidityPeriod.unknownStartSentinel) &&
-        validity.validFrom.isBefore(validity.validUntil)) {
-      return '${formatter.format(validity.validFrom)} – ${formatter.format(validity.validUntil)}';
-    }
-    return 'Valid until ${formatter.format(validity.validUntil)}';
-  }
-
-  static String _formatSpendLimit(double? min, double? max) {
-    if (min != null && max != null) {
-      return 'LKR ${_currencyFormat.format(min)} – LKR ${_currencyFormat.format(max)}';
-    } else if (min != null) {
-      return 'Min: LKR ${_currencyFormat.format(min)}';
-    } else if (max != null) {
-      return 'Max: LKR ${_currencyFormat.format(max)}';
-    }
-    return 'None';
-  }
+    Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}',
+    ),
+    mode: LaunchMode.externalApplication,
+  );
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title});
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.child});
+
   final String title;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-      );
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? valueColor;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: valueColor ?? Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailPlaceholder extends StatelessWidget {
-  const _DetailPlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [const Color(0xFFFFF1F2), const Color(0xFFFEE2E2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: (isDark ? AppColors.primaryLight : AppColors.primary)
-                .withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.local_offer_rounded,
-            size: 40,
-            color: isDark ? AppColors.primaryLight : AppColors.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationScopeBadge extends StatelessWidget {
-  final String scope;
-  const _LocationScopeBadge({required this.scope});
-
-  @override
-  Widget build(BuildContext context) {
-    String label;
-    IconData icon;
-    Color color;
-
-    switch (scope) {
-      case 'ONLINE':
-        label = 'Online Promotion • Valid on website and mobile app';
-        icon = Icons.language;
-        color = Colors.teal;
-        break;
-      case 'NATIONWIDE':
-        label = 'Islandwide • Valid across all merchant outlets islandwide';
-        icon = Icons.public;
-        color = Colors.indigo;
-        break;
-      case 'SELECTED_OUTLETS':
-        label = 'Selected Outlets • Check terms or contact merchant for participating branches';
-        icon = Icons.storefront_outlined;
-        color = Colors.amber.shade900;
-        break;
-      case 'DISTRICT_REGION':
-        label = 'Regional Offer • Valid in specific district/region';
-        icon = Icons.map_outlined;
-        color = Colors.blue;
-        break;
-      case 'EXPLICIT_BRANCH':
-      case 'MULTIPLE_BRANCHES':
-        label = 'Branch Specific • Valid at listed physical branches';
-        icon = Icons.location_on_outlined;
-        color = Colors.green.shade800;
-        break;
-      default:
-        label = 'Branch applicability not specified by bank';
-        icon = Icons.info_outline;
-        color = Colors.grey.shade700;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: 10),
-          Expanded(
+          Semantics(
+            header: true,
             child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
+          const SizedBox(height: 8),
+          child,
         ],
       ),
     );
   }
+}
+
+class _Fact extends StatelessWidget {
+  const _Fact(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(label)),
+        const SizedBox(width: 12),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
+}
+
+class _Bullet extends StatelessWidget {
+  const _Bullet(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('•  '),
+        Expanded(child: Text(text, style: const TextStyle(height: 1.4))),
+      ],
+    ),
+  );
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.icon, required this.text, required this.color});
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: TextStyle(color: color, height: 1.35)),
+        ),
+      ],
+    ),
+  );
 }
 
 class _OfferLocationMap extends StatelessWidget {
@@ -938,47 +648,30 @@ class _OfferLocationMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final first = locations.first;
-    final initialCenter = LatLng(first.latitude, first.longitude);
-
-    final markers = locations.map((loc) {
-      return Marker(
-        point: LatLng(loc.latitude, loc.longitude),
-        width: 36,
-        height: 36,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.place,
-            size: 20,
-            color: Colors.white,
+    final markers = [
+      for (final loc in locations)
+        Marker(
+          point: LatLng(loc.latitude, loc.longitude),
+          width: 36,
+          height: 36,
+          child: Semantics(
+            label: merchantName,
+            child: Icon(
+              Icons.location_on,
+              size: 34,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
-      );
-    }).toList();
+    ];
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: SizedBox(
         height: 180,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
         child: FlutterMap(
           options: MapOptions(
-            initialCenter: initialCenter,
+            initialCenter: LatLng(first.latitude, first.longitude),
             initialZoom: 13,
             minZoom: 5,
             maxZoom: 18,
@@ -994,6 +687,11 @@ class _OfferLocationMap extends StatelessWidget {
               errorTileCallback: (tile, error, stackTrace) {},
             ),
             MarkerLayer(markers: markers),
+            const RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution('© OpenStreetMap contributors'),
+              ],
+            ),
           ],
         ),
       ),

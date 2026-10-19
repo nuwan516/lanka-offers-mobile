@@ -38,10 +38,11 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
     if (!mounted) return;
     setState(() {
       _banks = offers.map((e) => e.bankName).toSet().toList()..sort();
-      final discoveredNetworks = offers
-          .expand((e) => e.cardEligibility?.networks ?? <String>[])
-          .where((e) => e.isNotEmpty)
-          .toSet();
+      final discoveredNetworks =
+          offers
+              .expand((e) => e.cardEligibility?.networks ?? <String>[])
+              .where((e) => e.isNotEmpty)
+              .toSet();
       final allNetworks = {'Visa', 'Mastercard', 'Amex', ...discoveredNetworks};
       _availableNetworks = allNetworks.toList()..sort();
       _selectedBanks.addAll(preferences.selectedBanks);

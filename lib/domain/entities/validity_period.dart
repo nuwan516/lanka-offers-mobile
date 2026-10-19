@@ -18,5 +18,6 @@ class ValidityPeriod {
   static final DateTime unknownStartSentinel = DateTime(2020, 1, 1);
   static final DateTime noExpirySentinel = DateTime(2099, 12, 31);
 
-  bool get hasNoConfiguredExpiry => validUntil.isAtSameMomentAs(noExpirySentinel);
+  bool get hasNoConfiguredExpiry =>
+      validUntil.isAtSameMomentAs(noExpirySentinel);
 }

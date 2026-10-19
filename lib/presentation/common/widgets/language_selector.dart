@@ -32,6 +32,7 @@ class _LanguageSelectorDialogState extends State<LanguageSelectorDialog> {
 
   Future<void> _selectLanguage(Locale locale) async {
     await _languageService.setLocale(locale);
+    if (!mounted) return;
     setState(() {
       _selectedLocale = locale;
     });
@@ -50,41 +51,43 @@ class _LanguageSelectorDialogState extends State<LanguageSelectorDialog> {
         AppLocalizations.of(context)!.language,
         style: AppTextStyles.h3,
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children:
-            LanguageService.supportedLocales.map((locale) {
-              final isSelected =
-                  _selectedLocale.languageCode == locale.languageCode;
-              return RadioListTile<Locale>(
-                title: Row(
-                  children: [
-                    Text(
-                      _languageService.getLanguageName(locale.languageCode),
-                      style: AppTextStyles.body1Medium,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _languageService.getLanguageNativeName(
-                        locale.languageCode,
+      content: RadioGroup<Locale>(
+        groupValue: _selectedLocale,
+        onChanged: (Locale? value) {
+          if (value != null) {
+            _selectLanguage(value);
+          }
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children:
+              LanguageService.supportedLocales.map((locale) {
+                final isSelected =
+                    _selectedLocale.languageCode == locale.languageCode;
+                return RadioListTile<Locale>(
+                  title: Row(
+                    children: [
+                      Text(
+                        _languageService.getLanguageName(locale.languageCode),
+                        style: AppTextStyles.body1Medium,
                       ),
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textSecondary,
+                      const SizedBox(width: 8),
+                      Text(
+                        _languageService.getLanguageNativeName(
+                          locale.languageCode,
+                        ),
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                value: locale,
-                groupValue: _selectedLocale,
-                onChanged: (Locale? value) {
-                  if (value != null) {
-                    _selectLanguage(value);
-                  }
-                },
-                activeColor: AppColors.primary,
-                selected: isSelected,
-              );
-            }).toList(),
+                    ],
+                  ),
+                  value: locale,
+                  activeColor: AppColors.primary,
+                  selected: isSelected,
+                );
+              }).toList(),
+        ),
       ),
       actions: [
         TextButton(

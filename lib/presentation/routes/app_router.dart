@@ -24,9 +24,10 @@ final goRouter = GoRouter(
       path: '/offer/:id',
       pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
-        final extraMap = state.extra is Map<String, dynamic>
-            ? state.extra as Map<String, dynamic>
-            : null;
+        final extraMap =
+            state.extra is Map<String, dynamic>
+                ? state.extra as Map<String, dynamic>
+                : null;
         final offers = extraMap?['offers'] as List<BankOffer>?;
         final initialIndex = extraMap?['initialIndex'] as int?;
         return CustomTransitionPage(

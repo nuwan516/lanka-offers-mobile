@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.local_offer,
                   size: 64,
                   color: AppColors.primary,

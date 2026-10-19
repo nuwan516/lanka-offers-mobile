@@ -55,16 +55,19 @@ class UserCard {
       return UserCard(
         bank: parts[0].trim(),
         cardType: parts[1].trim(),
-        network: parts.length > 2 && parts[2].trim().isNotEmpty ? parts[2].trim() : null,
-        tier: parts.length > 3 && parts[3].trim().isNotEmpty ? parts[3].trim() : null,
+        network:
+            parts.length > 2 && parts[2].trim().isNotEmpty
+                ? parts[2].trim()
+                : null,
+        tier:
+            parts.length > 3 && parts[3].trim().isNotEmpty
+                ? parts[3].trim()
+                : null,
         isCorporate: parts.length > 4 && parts[4].trim() == '1',
       );
     }
     // Fallback if plain string
-    return UserCard(
-      bank: str.trim(),
-      cardType: 'Credit Card',
-    );
+    return UserCard(bank: str.trim(), cardType: 'Credit Card');
   }
 
   @override

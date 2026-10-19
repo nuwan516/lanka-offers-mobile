@@ -39,7 +39,11 @@ class _MapViewState extends State<MapView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.map_outlined, size: 48, color: AppColors.textTertiary),
+              const Icon(
+                Icons.map_outlined,
+                size: 48,
+                color: AppColors.textTertiary,
+              ),
               const SizedBox(height: 8),
               Text('No locations available', style: AppTextStyles.body2),
             ],

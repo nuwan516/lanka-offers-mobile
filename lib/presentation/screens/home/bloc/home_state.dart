@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/enums/offer_type.dart';
 import '../../../../domain/entities/bank_offer.dart';
+import '../../../../domain/entities/bank_summary.dart';
 
 abstract class HomeState extends Equatable {
   @override
@@ -20,6 +21,9 @@ class HomeLoaded extends HomeState {
   final List<BankOffer> recentlyViewed;
   final OfferType selectedOfferType;
 
+  /// Live bank directory; empty when `/api/banks` could not be reached.
+  final List<BankSummary> banks;
+
   HomeLoaded({
     required this.allOffers,
     required this.featuredOffers,
@@ -27,6 +31,7 @@ class HomeLoaded extends HomeState {
     required this.categories,
     required this.recentlyViewed,
     required this.selectedOfferType,
+    this.banks = const [],
   });
 
   HomeLoaded copyWith({
@@ -36,6 +41,7 @@ class HomeLoaded extends HomeState {
     List<Category>? categories,
     List<BankOffer>? recentlyViewed,
     OfferType? selectedOfferType,
+    List<BankSummary>? banks,
   }) {
     return HomeLoaded(
       allOffers: allOffers ?? this.allOffers,
@@ -44,6 +50,7 @@ class HomeLoaded extends HomeState {
       categories: categories ?? this.categories,
       recentlyViewed: recentlyViewed ?? this.recentlyViewed,
       selectedOfferType: selectedOfferType ?? this.selectedOfferType,
+      banks: banks ?? this.banks,
     );
   }
 
@@ -55,6 +62,7 @@ class HomeLoaded extends HomeState {
     categories,
     recentlyViewed,
     selectedOfferType,
+    banks,
   ];
 }
 
@@ -70,7 +78,7 @@ class Category extends Equatable {
   final int count;
   final IconData icon;
 
-  Category({required this.name, required this.count, required this.icon});
+  const Category({required this.name, required this.count, required this.icon});
 
   @override
   List<Object?> get props => [name, count, icon];

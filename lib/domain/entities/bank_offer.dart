@@ -6,6 +6,9 @@ import 'restrictions.dart';
 
 class BankOffer extends BaseOffer {
   final String bankName;
+  final String? bankCode;
+  final String? sourceUrl;
+  final List<String> generalTerms;
   final String merchantName;
   final String? canonicalMerchant;
   final String? locationScope;
@@ -20,7 +23,7 @@ class BankOffer extends BaseOffer {
   final double? minTransaction;
   final double? maxTransaction;
 
-  BankOffer({
+  const BankOffer({
     required super.uniqueId,
     required super.title,
     required super.description,
@@ -34,6 +37,9 @@ class BankOffer extends BaseOffer {
     required super.quality,
     super.metrics,
     required this.bankName,
+    this.bankCode,
+    this.sourceUrl,
+    this.generalTerms = const [],
     required this.merchantName,
     this.canonicalMerchant,
     this.locationScope,
@@ -58,17 +64,21 @@ class BankOffer extends BaseOffer {
         // Use description if the datasource already built it (e.g. "20% off").
         // Fall back to formatting the numeric value — use toStringAsFixed(0) so
         // whole numbers like 20.0 render as "20% OFF" not "20.0% OFF".
-        if (discount!.description.isNotEmpty) return discount!.description.toUpperCase();
+        if (discount!.description.isNotEmpty) {
+          return discount!.description.toUpperCase();
+        }
         final v = discount!.value;
         if (v is double) {
-          final rounded = v == v.truncate() ? v.toInt().toString() : v.toStringAsFixed(1);
+          final rounded =
+              v == v.truncate() ? v.toInt().toString() : v.toStringAsFixed(1);
           return '$rounded% OFF';
         }
         return '${discount!.value}% OFF';
       } else if (discount!.type == 'amount') {
         final v = discount!.value;
         if (v is double) {
-          final rounded = v == v.truncate() ? v.toInt().toString() : v.toStringAsFixed(2);
+          final rounded =
+              v == v.truncate() ? v.toInt().toString() : v.toStringAsFixed(2);
           return 'Rs. $rounded OFF';
         }
         return 'Rs. ${discount!.value} OFF';
@@ -87,6 +97,9 @@ class BankOffer extends BaseOffer {
   List<Object?> get props => [
     ...super.props,
     bankName,
+    bankCode,
+    sourceUrl,
+    generalTerms,
     merchantName,
     canonicalMerchant,
     locationScope,

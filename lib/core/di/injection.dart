@@ -9,6 +9,7 @@ import '../services/language_service.dart';
 import '../services/location_service.dart';
 import '../services/phase_two_survey_service.dart';
 import '../../domain/usecases/get_all_offers.dart';
+import '../../domain/usecases/get_banks.dart';
 import '../../domain/usecases/get_offers_by_type.dart';
 import '../../domain/usecases/search_offers.dart';
 import '../../domain/usecases/filter_offers.dart';
@@ -18,7 +19,6 @@ import '../../domain/usecases/unsave_offer.dart';
 import '../../domain/usecases/get_saved_offers.dart';
 import '../../domain/usecases/toggle_offer_favorite.dart';
 import '../../presentation/screens/home/bloc/home_bloc.dart';
-import '../../presentation/screens/explore/bloc/explore_bloc.dart';
 import '../../presentation/screens/search/bloc/search_bloc.dart';
 import '../../presentation/screens/saved/bloc/saved_bloc.dart';
 
@@ -47,6 +47,7 @@ Future<void> configureDependencies() async {
   // Use cases
   getIt.registerLazySingleton(() => GetAllOffers(getIt<OfferRepository>()));
   getIt.registerLazySingleton(() => GetOffersByType(getIt<OfferRepository>()));
+  getIt.registerLazySingleton(() => GetBanks(getIt<OfferRepository>()));
   getIt.registerLazySingleton(() => SearchOffers(getIt<OfferRepository>()));
   getIt.registerLazySingleton(() => FilterOffers(getIt<OfferRepository>()));
   getIt.registerLazySingleton(() => GetNearbyOffers(getIt<OfferRepository>()));
@@ -62,13 +63,7 @@ Future<void> configureDependencies() async {
     () => HomeBloc(
       getAllOffers: getIt<GetAllOffers>(),
       getNearbyOffers: getIt<GetNearbyOffers>(),
-    ),
-  );
-
-  getIt.registerFactory(
-    () => ExploreBloc(
-      getAllOffers: getIt<GetAllOffers>(),
-      filterOffers: getIt<FilterOffers>(),
+      getBanks: getIt<GetBanks>(),
     ),
   );
 

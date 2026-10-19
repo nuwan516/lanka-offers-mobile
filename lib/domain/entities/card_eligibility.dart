@@ -98,8 +98,13 @@ class CardEligibility {
           _listEquals(restrictions, other.restrictions);
 
   @override
-  int get hashCode =>
-      Object.hashAll([...cardTypes, ...networks, ...includedCards, ...excludedCards, ...restrictions]);
+  int get hashCode => Object.hashAll([
+    ...cardTypes,
+    ...networks,
+    ...includedCards,
+    ...excludedCards,
+    ...restrictions,
+  ]);
 
   static bool _listEquals(List<String> a, List<String> b) {
     if (identical(a, b)) return true;

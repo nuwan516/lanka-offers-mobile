@@ -250,7 +250,7 @@ class _EventsMapViewScreenState extends State<EventsMapViewScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.location_on,
                             size: 16,
                             color: AppColors.textSecondary,
@@ -330,6 +330,7 @@ class _EventsMapViewScreenState extends State<EventsMapViewScreen> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Could not open maps: $e')));

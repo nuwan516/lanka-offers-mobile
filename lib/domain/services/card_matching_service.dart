@@ -3,11 +3,7 @@ import '../entities/card_eligibility.dart';
 import '../entities/user_card.dart';
 import '../entities/user_preferences.dart';
 
-enum CardMatchStatus {
-  confirmedMatch,
-  confirmedMismatch,
-  unknown,
-}
+enum CardMatchStatus { confirmedMatch, confirmedMismatch, unknown }
 
 class CardMatchResult {
   final CardMatchStatus status;
@@ -25,7 +21,8 @@ class CardMatchResult {
   bool get isUnknown => status == CardMatchStatus.unknown;
 
   @override
-  String toString() => 'CardMatchResult(status: $status, reason: $reason, card: ${matchedCard?.displayName})';
+  String toString() =>
+      'CardMatchResult(status: $status, reason: $reason, card: ${matchedCard?.displayName})';
 }
 
 class CardMatchingService {
@@ -63,7 +60,7 @@ class CardMatchingService {
     }
 
     // 3. All cards are confirmed mismatches
-    return CardMatchResult(
+    return const CardMatchResult(
       status: CardMatchStatus.confirmedMismatch,
       reason: 'None of your saved cards match the offer requirements',
     );
@@ -76,7 +73,8 @@ class CardMatchingService {
       return CardMatchResult(
         status: CardMatchStatus.confirmedMismatch,
         matchedCard: card,
-        reason: 'Offer bank (${offer.bankName}) does not match card bank (${card.bank})',
+        reason:
+            'Offer bank (${offer.bankName}) does not match card bank (${card.bank})',
       );
     }
 
@@ -102,7 +100,8 @@ class CardMatchingService {
             reason: 'Corporate cards are explicitly excluded from this offer',
           );
         }
-        if (normExcl.contains('business') && (card.isCorporate || card.tier?.toLowerCase() == 'business')) {
+        if (normExcl.contains('business') &&
+            (card.isCorporate || card.tier?.toLowerCase() == 'business')) {
           return CardMatchResult(
             status: CardMatchStatus.confirmedMismatch,
             matchedCard: card,
@@ -168,7 +167,8 @@ class CardMatchingService {
         return CardMatchResult(
           status: CardMatchStatus.unknown,
           matchedCard: card,
-          reason: 'Offer requires ${elig.includedCards.join(' or ')}; user card tier is unspecified',
+          reason:
+              'Offer requires ${elig.includedCards.join(' or ')}; user card tier is unspecified',
         );
       }
 
@@ -177,10 +177,14 @@ class CardMatchingService {
         final normTier = card.tier!.toLowerCase();
         if (normInc.contains(normTier)) {
           // If network is also in the tier name, verify network
-          if (normInc.contains('visa') && card.network != null && !card.network!.toLowerCase().contains('visa')) {
+          if (normInc.contains('visa') &&
+              card.network != null &&
+              !card.network!.toLowerCase().contains('visa')) {
             return false;
           }
-          if (normInc.contains('mastercard') && card.network != null && !card.network!.toLowerCase().contains('mastercard')) {
+          if (normInc.contains('mastercard') &&
+              card.network != null &&
+              !card.network!.toLowerCase().contains('mastercard')) {
             return false;
           }
           return true;
@@ -192,7 +196,8 @@ class CardMatchingService {
         return CardMatchResult(
           status: CardMatchStatus.confirmedMismatch,
           matchedCard: card,
-          reason: 'Offer requires ${elig.includedCards.join(' or ')}, card tier is ${card.tier}',
+          reason:
+              'Offer requires ${elig.includedCards.join(' or ')}, card tier is ${card.tier}',
         );
       }
     }
@@ -203,19 +208,23 @@ class CardMatchingService {
         return CardMatchResult(
           status: CardMatchStatus.unknown,
           matchedCard: card,
-          reason: 'Offer requires ${elig.networks.join(' or ')}; card network is unspecified',
+          reason:
+              'Offer requires ${elig.networks.join(' or ')}; card network is unspecified',
         );
       }
 
-      final networkMatches = elig.networks.any((net) =>
-          net.toLowerCase() == card.network!.toLowerCase() ||
-          card.network!.toLowerCase().contains(net.toLowerCase()));
+      final networkMatches = elig.networks.any(
+        (net) =>
+            net.toLowerCase() == card.network!.toLowerCase() ||
+            card.network!.toLowerCase().contains(net.toLowerCase()),
+      );
 
       if (!networkMatches) {
         return CardMatchResult(
           status: CardMatchStatus.confirmedMismatch,
           matchedCard: card,
-          reason: 'Offer requires ${elig.networks.join(' or ')}, card network is ${card.network}',
+          reason:
+              'Offer requires ${elig.networks.join(' or ')}, card network is ${card.network}',
         );
       }
     }
@@ -251,9 +260,10 @@ class CardMatchingService {
 
     // 2. Synthesize from selectedBanks + cardTypes + cardNetworks if savedCards is empty
     if (cards.isEmpty && prefs.selectedBanks.isNotEmpty) {
-      final types = prefs.cardTypes.isNotEmpty
-          ? prefs.cardTypes
-          : ['Credit Card', 'Debit Card'];
+      final types =
+          prefs.cardTypes.isNotEmpty
+              ? prefs.cardTypes
+              : ['Credit Card', 'Debit Card'];
 
       for (final bank in prefs.selectedBanks) {
         for (final type in types) {
@@ -271,11 +281,9 @@ class CardMatchingService {
     return cards;
   }
 
-  static bool _isCredit(String type) =>
-      type.toLowerCase().contains('credit');
+  static bool _isCredit(String type) => type.toLowerCase().contains('credit');
 
-  static bool _isDebit(String type) =>
-      type.toLowerCase().contains('debit');
+  static bool _isDebit(String type) => type.toLowerCase().contains('debit');
 
   static bool _banksMatch(String a, String b) {
     final normA = _canonicalBank(a);

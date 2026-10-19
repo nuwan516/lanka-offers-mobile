@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../domain/usecases/get_all_offers.dart';
+import '../../../../domain/entities/bank_summary.dart';
+import '../../../../domain/usecases/get_banks.dart';
 import '../../../../domain/usecases/get_nearby_offers.dart';
 import '../../../../core/enums/offer_type.dart';
 import 'home_event.dart';
@@ -10,9 +12,13 @@ import '../../../../domain/entities/bank_offer.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetAllOffers getAllOffers;
   final GetNearbyOffers getNearbyOffers;
+  final GetBanks getBanks;
 
-  HomeBloc({required this.getAllOffers, required this.getNearbyOffers})
-    : super(HomeInitial()) {
+  HomeBloc({
+    required this.getAllOffers,
+    required this.getNearbyOffers,
+    required this.getBanks,
+  }) : super(HomeInitial()) {
     on<LoadHomeData>(_onLoadHomeData);
     on<RefreshHomeData>(_onRefreshHomeData);
     on<ChangeOfferType>(_onChangeOfferType);
@@ -26,6 +32,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     try {
       final allOffers = (await getAllOffers()).whereType<BankOffer>().toList();
+
+      // The bank directory is a nicety: if it fails the offers still show.
+      var banks = <BankSummary>[];
+      try {
+        banks = await getBanks();
+      } catch (_) {}
       // Nearby results are only shown after real location is available.
       final nearby = <BankOffer>[];
 
@@ -47,8 +59,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           featuredOffers: featured,
           nearbyOffers: nearby,
           categories: categories,
-          recentlyViewed: [],
+          recentlyViewed: const [],
           selectedOfferType: OfferType.bankOffer,
+          banks: banks,
         ),
       );
     } catch (e) {

@@ -3,7 +3,7 @@ import '../utils/date_formatter.dart';
 extension DateExtensions on DateTime {
   int daysRemaining() {
     final now = DateTime.now();
-    final diff = this.difference(now);
+    final diff = difference(now);
     return diff.inDays > 0 ? diff.inDays : 0;
   }
 

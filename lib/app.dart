@@ -65,6 +65,7 @@ class _LankaOffersAppState extends State<LankaOffersApp> {
 }
 
 // Global key to access app state
+// ignore: library_private_types_in_public_api
 final GlobalKey<_LankaOffersAppState> appStateKey =
     GlobalKey<_LankaOffersAppState>();
 

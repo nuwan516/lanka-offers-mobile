@@ -98,11 +98,16 @@ void main() {
       // Check Offer 1 of 3 indicator
       expect(find.text('Offer 1 of 3'), findsOneWidget);
       expect(find.text('Pizza Hut'), findsOneWidget);
-      expect(find.text('20% OFF'), findsOneWidget);
+      // Wording comes from the shared semantics layer: a plain discount, not "up to".
+      expect(find.text('20% off'), findsOneWidget);
       expect(find.text('Pizza Fest 20% Off'), findsOneWidget);
 
-      // Verify spend limits formatted with commas without any hardcoded text
-      expect(find.text('LKR 5,000 – LKR 50,000'), findsOneWidget);
+      // Minimum transaction and maximum transaction value are separate facts
+      // (never merged into one range), formatted with thousands separators.
+      expect(find.text('Minimum transaction'), findsOneWidget);
+      expect(find.text('LKR 5,000'), findsOneWidget);
+      expect(find.text('Maximum transaction value'), findsOneWidget);
+      expect(find.text('LKR 50,000'), findsOneWidget);
 
       // Verify confirmed branch is shown
       expect(find.text('Kandy City Centre Branch'), findsOneWidget);
@@ -145,7 +150,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Online Promotion • Valid on website and mobile app'), findsOneWidget);
+      // States only what the source scope says; no claim about channels.
+      expect(find.text('Available online'), findsOneWidget);
+      expect(find.textContaining('mobile app'), findsNothing);
     });
 
     testWidgets('Truthful location scope presentation for NATIONWIDE offer', (tester) async {
@@ -162,7 +169,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Islandwide • Valid across all merchant outlets islandwide'), findsOneWidget);
+      // Island-wide scope does not claim every outlet participates.
+      expect(find.text('Available island-wide'), findsOneWidget);
+      expect(find.textContaining('all merchant outlets'), findsNothing);
     });
   });
 }

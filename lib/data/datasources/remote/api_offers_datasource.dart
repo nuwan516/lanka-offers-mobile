@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../../../core/constants/banks.dart';
+import '../../../core/semantics/offer_semantics.dart';
 import '../../../domain/entities/bank_offer.dart';
+import '../../../domain/entities/bank_summary.dart';
 import '../../../domain/entities/card_eligibility.dart';
 import '../../../domain/entities/contact_info.dart';
-import '../../../domain/entities/discount.dart';
 import '../../../domain/entities/location.dart';
 import '../../../domain/entities/quality_score.dart';
 import '../../../domain/entities/restrictions.dart';
@@ -49,15 +51,101 @@ class ApiOffersDataSource {
       params['locationScope'] = locationScope;
     }
 
+    return (await _getOffersPage(params)).items;
+  }
+
+  Future<({List<BankOffer> items, int total})> _fetchOffersPage({
+    String? bank,
+    String? category,
+    String? search,
+    String? merchant,
+    String? locationScope,
+    required int limit,
+    required int offset,
+  }) {
+    final params = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (bank != null && bank.isNotEmpty) params['bank'] = bank.toLowerCase();
+    if (category != null && category.isNotEmpty) params['category'] = category;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (merchant != null && merchant.isNotEmpty) params['merchant'] = merchant;
+    if (locationScope != null && locationScope.isNotEmpty) {
+      params['locationScope'] = locationScope;
+    }
+    return _getOffersPage(params);
+  }
+
+  Future<({List<BankOffer> items, int total})> _getOffersPage(
+    Map<String, String> params,
+  ) async {
     final uri = Uri.parse('$_base/api/offers').replace(queryParameters: params);
     final response = await http.get(uri).timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw Exception('API error ${response.statusCode}');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final items = (body['items'] as List<dynamic>? ?? []);
-    return items
-        .map((j) => _map(j as Map<String, dynamic>))
+    final raw = (body['items'] as List<dynamic>? ?? []);
+    final items = raw.map((j) => _map(j as Map<String, dynamic>)).toList();
+    final total = body['total'];
+    return (items: items, total: total is num ? total.toInt() : items.length);
+  }
+
+  /// Largest page the public API serves (backend PAGINATION.MAX_LIMIT).
+  static const int _maxPage = 500;
+
+  /// Every offer matching the filters, fetched page by page. A single default
+  /// page is only 100 of several hundred offers.
+  Future<List<BankOffer>> fetchAllOffers({
+    String? bank,
+    String? category,
+    String? search,
+    String? merchant,
+    String? locationScope,
+  }) async {
+    final all = <BankOffer>[];
+    var offset = 0;
+    for (;;) {
+      final page = await _fetchOffersPage(
+        bank: bank,
+        category: category,
+        search: search,
+        merchant: merchant,
+        locationScope: locationScope,
+        limit: _maxPage,
+        offset: offset,
+      );
+      all.addAll(page.items);
+      offset += page.items.length;
+      if (page.items.isEmpty || offset >= page.total) break;
+    }
+    return all;
+  }
+
+  /// The ten supported banks with live active-offer counts.
+  Future<List<BankSummary>> fetchBanks() async {
+    final uri = Uri.parse('$_base/api/banks');
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw Exception('API error ${response.statusCode}');
+    }
+    final body = jsonDecode(response.body);
+    final list =
+        body is List ? body : (body['items'] ?? body['data'] ?? []) as List;
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((b) {
+          final count = b['activeOfferCount'];
+          return BankSummary(
+            code: (_str(b['code']) ?? '').toLowerCase(),
+            name: _str(b['name']) ?? '',
+            activeOfferCount:
+                count is num ? count.toInt() : int.tryParse('$count'),
+            cardTypesSupported: _strList(b['cardTypesSupported']),
+          );
+        })
+        .where((b) => b.code.isNotEmpty)
         .toList();
   }
 
@@ -82,17 +170,16 @@ class ApiOffersDataSource {
     if (category != null && category.isNotEmpty) params['category'] = category;
     if (search != null && search.isNotEmpty) params['search'] = search;
 
-    final uri =
-        Uri.parse('$_base/api/offers/nearby').replace(queryParameters: params);
+    final uri = Uri.parse(
+      '$_base/api/offers/nearby',
+    ).replace(queryParameters: params);
     final response = await http.get(uri).timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw Exception('API error ${response.statusCode}');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final items = (body['items'] as List<dynamic>? ?? []);
-    return items
-        .map((j) => _map(j as Map<String, dynamic>))
-        .toList();
+    return items.map((j) => _map(j as Map<String, dynamic>)).toList();
   }
 
   Future<BankOffer?> fetchOfferById(String id) async {
@@ -111,12 +198,16 @@ class ApiOffersDataSource {
     final offerData = raw?['offer'] as Map<String, dynamic>?;
     final merchantData = raw?['merchant'] as Map<String, dynamic>?;
 
-    final description = _str(j['description']) ??
+    final description =
+        _str(j['description']) ??
         _str(offerData?['description'])?.trim() ??
         _str(j['title']) ??
         '';
 
-    final discount = _parseDiscount(j['discount_percentage']);
+    final discount = OfferSemantics.parseDiscount(
+      j['discount_percentage'],
+      evidence: '${j['title'] ?? ''} ${j['description'] ?? ''}',
+    );
 
     CardEligibility? cardEligibility;
     final rawElig = j['card_eligibility'];
@@ -144,7 +235,8 @@ class ApiOffersDataSource {
       }
     }
     if (cards.isEmpty) {
-      final rawTokens = _str(j['card_type'])
+      final rawTokens =
+          _str(j['card_type'])
               ?.split(',')
               .map((c) => c.trim())
               .where((c) => c.isNotEmpty)
@@ -170,13 +262,12 @@ class ApiOffersDataSource {
     // (which previously made evergreen offers look like they were about to
     // expire in 30 days, and newly-changed offers look like they'd just
     // started yesterday).
-    final validFrom = _parseDate(j['valid_from']) ??
-        ValidityPeriod.unknownStartSentinel;
-    final validUntil = _parseDate(j['valid_to']) ??
-        ValidityPeriod.noExpirySentinel;
+    final validFrom =
+        _parseDate(j['valid_from']) ?? ValidityPeriod.unknownStartSentinel;
+    final validUntil =
+        _parseDate(j['valid_to']) ?? ValidityPeriod.noExpirySentinel;
 
-    final locations =
-        _parseLocations(j['geo_locations'] as List<dynamic>?);
+    final locations = _parseLocations(j['geo_locations'] as List<dynamic>?);
 
     final rulePassed = j['rule_passed'] as bool? ?? true;
 
@@ -197,15 +288,18 @@ class ApiOffersDataSource {
     // Contact
     ContactInfo? contact;
     if (merchantData != null) {
-      final phones = (merchantData['phone'] as List<dynamic>?)
-          ?.whereType<String>()
-          .where((p) => p.isNotEmpty)
-          .toList();
-      final emails = (merchantData['email'] as List<dynamic>?)
-          ?.whereType<String>()
-          .where((e) => e.isNotEmpty)
-          .toList();
-      final website = _str(merchantData['website']) ??
+      final phones =
+          (merchantData['phone'] as List<dynamic>?)
+              ?.whereType<String>()
+              .where((p) => p.isNotEmpty)
+              .toList();
+      final emails =
+          (merchantData['email'] as List<dynamic>?)
+              ?.whereType<String>()
+              .where((e) => e.isNotEmpty)
+              .toList();
+      final website =
+          _str(merchantData['website']) ??
           _str(raw?['sourceUrl']) ??
           _str(j['source_url']);
       if (phones?.isNotEmpty == true ||
@@ -231,9 +325,13 @@ class ApiOffersDataSource {
         grade: rulePassed ? 'B' : 'C',
       ),
       bankName: _bankLabel(_str(j['bank']) ?? ''),
-      merchantName: _str(j['merchant_name'])?.isNotEmpty == true
-          ? j['merchant_name'] as String
-          : _str(j['title']) ?? '',
+      bankCode: _str(j['bank'])?.toLowerCase(),
+      sourceUrl: _str(j['source_url']) ?? _str(raw?['sourceUrl']),
+      generalTerms: _strList(offerData?['generalTerms']),
+      merchantName:
+          _str(j['merchant_name'])?.isNotEmpty == true
+              ? j['merchant_name'] as String
+              : _str(j['title']) ?? '',
       canonicalMerchant: _str(j['canonical_merchant']),
       locationScope: _str(j['location_scope']),
       merchantLocation: _str(j['merchant_location']),
@@ -248,34 +346,6 @@ class ApiOffersDataSource {
     );
   }
 
-  Discount? _parseDiscount(dynamic raw) {
-    if (raw == null) return null;
-    final text = raw.toString().trim();
-    if (text.isEmpty) return null;
-
-    // A clean numeric value (e.g. "20") — the common case.
-    final pct = double.tryParse(text);
-    if (pct != null) {
-      return Discount(
-        type: 'percentage',
-        value: pct,
-        description: '${pct.toStringAsFixed(0)}% off',
-      );
-    }
-
-    // Anything else (e.g. "Up to 20%", "20% (min. spend Rs. 5,000)") must
-    // keep its original wording — forcing it through double.tryParse alone
-    // would drop the whole discount silently. `type: 'text'` routes both
-    // getDisplayValue() and the offer card's _benefit() to use
-    // `description` verbatim instead of a synthesized "$value% off".
-    final match = RegExp(r'(\d+(\.\d+)?)').firstMatch(text);
-    return Discount(
-      type: 'text',
-      value: match != null ? double.tryParse(match.group(1)!) : null,
-      description: text,
-    );
-  }
-
   List<Location> _parseLocations(List<dynamic>? geoList) {
     if (geoList == null || geoList.isEmpty) return [];
     final result = <Location>[];
@@ -284,14 +354,16 @@ class ApiOffersDataSource {
       final lat = _dbl(item['lat'] ?? item['latitude']);
       final lng = _dbl(item['lng'] ?? item['lon'] ?? item['longitude']);
       if (lat == null || lng == null) continue;
-      result.add(Location(
-        name: _str(item['name'] ?? item['address']) ?? '',
-        address: _str(item['address']) ?? '',
-        district: _str(item['district']) ?? '',
-        city: _str(item['city']) ?? '',
-        latitude: lat,
-        longitude: lng,
-      ));
+      result.add(
+        Location(
+          name: _str(item['name'] ?? item['address']) ?? '',
+          address: _str(item['address']) ?? '',
+          district: _str(item['district']) ?? '',
+          city: _str(item['city']) ?? '',
+          latitude: lat,
+          longitude: lng,
+        ),
+      );
     }
     return result;
   }
@@ -306,19 +378,8 @@ class ApiOffersDataSource {
     return _dbl(tx?['max']);
   }
 
-  String _bankLabel(String bank) => switch (bank.toLowerCase()) {
-        'hnb' => 'HNB',
-        'boc' => 'Bank of Ceylon',
-        'combank' => 'Commercial Bank',
-        'dfcc' => 'DFCC Bank',
-        'ndb' => 'NDB Bank',
-        'nsb' => 'NSB',
-        'pabc' => 'Pan Asia Bank',
-        'peoples' => "People's Bank",
-        'sampath' => 'Sampath Bank',
-        'seylan' => 'Seylan Bank',
-        _ => bank.toUpperCase(),
-      };
+  String _bankLabel(String bank) =>
+      CanonicalBanks.lookup(bank)?.name ?? bank.toUpperCase();
 
   DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
@@ -328,6 +389,9 @@ class ApiOffersDataSource {
       return null;
     }
   }
+
+  List<String> _strList(dynamic v) =>
+      v is List ? v.map((e) => _str(e)).whereType<String>().toList() : const [];
 
   String? _str(dynamic v) {
     if (v == null) return null;

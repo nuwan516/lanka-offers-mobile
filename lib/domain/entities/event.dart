@@ -6,6 +6,7 @@ import 'amenities.dart';
 import '../../core/enums/event_type.dart';
 
 class Event extends BaseOffer {
+  @override
   final String providerName;
   final EventType eventType;
   final String organizer;
@@ -16,7 +17,7 @@ class Event extends BaseOffer {
   final String ageRestriction; // 'all_ages', '18+', '21+'
   final bool familyFriendly;
 
-  Event({
+  const Event({
     required super.uniqueId,
     required super.title,
     required super.description,

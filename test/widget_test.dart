@@ -6,6 +6,8 @@ import 'package:lanka_offers/core/localization/app_localizations.dart';
 import 'package:lanka_offers/core/services/language_service.dart';
 import 'package:lanka_offers/domain/entities/user_preferences.dart';
 import 'package:lanka_offers/domain/repositories/user_repository.dart';
+import 'package:lanka_offers/presentation/screens/home/home_screen.dart';
+import 'package:lanka_offers/presentation/screens/profile/profile_screen.dart';
 import 'package:lanka_offers/presentation/screens/main_navigation/main_navigation_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,22 +24,26 @@ void main() {
     await tester.pumpWidget(_localized(const MainNavigationScreen()));
     await tester.pump();
 
-    expect(find.byType(BottomNavigationBar), findsOneWidget);
-    final navigation = tester.widget<BottomNavigationBar>(
-      find.byType(BottomNavigationBar),
-    );
-    expect(navigation.items, hasLength(4));
-    expect(navigation.items.map((item) => item.label), [
-      'Home',
-      'Explore',
-      'Saved',
-      'Settings',
-    ]);
+    // Verify exactly four navigation destination labels are rendered
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Explore'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+
+    // Verify unwanted or legacy destinations are absent
     expect(find.text('Events'), findsNothing);
     expect(find.text('Profile'), findsNothing);
-    await tester.pump(const Duration(milliseconds: 600));
+
+    // Initial destination is HomeScreen
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    // Switch to Settings tab
     await tester.tap(find.text('Settings'));
     await tester.pump();
+
+    // Verify active screen switched to ProfileScreen
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
   });
 
   test('bank and card preferences use structured JSON persistence', () async {

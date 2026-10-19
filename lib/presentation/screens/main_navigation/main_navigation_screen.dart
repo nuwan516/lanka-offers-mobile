@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/localization/app_localizations.dart';
-import '../home/home_screen.dart';
-import '../explore/explore_screen.dart';
-import '../saved/saved_offers_screen.dart';
-import '../profile/profile_screen.dart';
 
+import '../../../core/localization/app_localizations.dart';
+import '../../routes/tab_navigation.dart';
+import '../explore/explore_screen.dart';
+import '../home/home_screen.dart';
+import '../profile/profile_screen.dart';
+import '../saved/saved_offers_screen.dart';
+
+/// The four primary destinations: Home, Explore (browse, nearby, banks),
+/// Saved and Settings. Search is reached from the search bars.
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -14,6 +17,8 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  static const int _exploreIndex = 1;
+
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
@@ -24,136 +29,60 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    TabNavigation.exploreRequest.addListener(_onExploreRequest);
+  }
+
+  @override
+  void dispose() {
+    TabNavigation.exploreRequest.removeListener(_onExploreRequest);
+    super.dispose();
+  }
+
+  /// Home asks for Explore (bank shortcut, category, nearby). The Explore
+  /// screen reads and clears the request when it is built.
+  void _onExploreRequest() {
+    if (TabNavigation.exploreRequest.value != null &&
+        _currentIndex != _exploreIndex) {
+      setState(() => _currentIndex = _exploreIndex);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final navItems = [
-      {
-        'label': l10n.text('homeNav'),
-        'icon': Icons.local_fire_department_outlined,
-        'activeIcon': Icons.local_fire_department_rounded,
-      },
-      {
-        'label': l10n.text('exploreNav'),
-        'icon': Icons.explore_outlined,
-        'activeIcon': Icons.explore_rounded,
-      },
-      {
-        'label': l10n.text('savedNav'),
-        'icon': Icons.favorite_border_rounded,
-        'activeIcon': Icons.favorite_rounded,
-      },
-      {
-        'label': l10n.text('settingsNav'),
-        'icon': Icons.person_outline_rounded,
-        'activeIcon': Icons.person_rounded,
-      },
-    ];
 
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.darkBorder : const Color(0xFFEEEEEE),
-              width: 0.8,
-            ),
+      bottomNavigationBar: NavigationBar(
+        height: 64,
+        selectedIndex: _currentIndex,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: l10n.text('homeNav'),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(navItems.length, (index) {
-                final isSelected = _currentIndex == index;
-                final item = navItems[index];
-
-                return Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    splashColor: AppColors.primary.withValues(alpha: 0.1),
-                    highlightColor: Colors.transparent,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isSelected ? 12 : 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark
-                                    ? AppColors.primary.withValues(alpha: 0.2)
-                                    : const Color(0xFFFFF0F0))
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            isSelected
-                                ? (item['activeIcon'] as IconData)
-                                : (item['icon'] as IconData),
-                            color: isSelected
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.darkTextTertiary
-                                    : const Color(0xFF7A7E85)),
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item['label'] as String,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight:
-                                isSelected ? FontWeight.w800 : FontWeight.w500,
-                            color: isSelected
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.darkTextTertiary
-                                    : const Color(0xFF7A7E85)),
-                          ),
-                        ),
-                        if (isSelected) ...[
-                          const SizedBox(height: 2),
-                          Container(
-                            width: 14,
-                            height: 2.5,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFC700),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ] else
-                          const SizedBox(height: 4.5),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
+          NavigationDestination(
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore_rounded),
+            label: l10n.text('exploreNav'),
           ),
-        ),
+          NavigationDestination(
+            icon: const Icon(Icons.favorite_border_rounded),
+            selectedIcon: const Icon(Icons.favorite_rounded),
+            label: l10n.text('savedNav'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings_rounded),
+            label: l10n.text('settingsNav'),
+          ),
+        ],
       ),
     );
   }
-
 }

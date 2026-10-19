@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'redesign_strings.dart';
+
 class AppLocalizations {
   final Locale locale;
 
@@ -31,6 +33,9 @@ class AppLocalizations {
       'trendingCategories': 'Trending Categories',
       'recentlyViewed': 'Recently Viewed',
       'allOffers': 'All Offers',
+      'homeBannerTitle': 'Bank card offers, in one place',
+      'homeBannerBadge': 'LIVE OFFERS',
+      'homeBannerSubtitle': 'Dining • Supermarkets • Hotels • Installments',
       'quickFilters': 'Quick Filters',
       'endingSoon': 'Ending Soon',
       'nearby': 'Nearby',
@@ -141,6 +146,9 @@ class AppLocalizations {
       'trendingCategories': 'ප්‍රවණතා කාණ්ඩ',
       'recentlyViewed': 'මෑතදී බැලූ',
       'allOffers': 'සියලුම දීමනා',
+      'homeBannerTitle': 'බැංකු කාඩ්පත් දීමනා, එක තැනකින්',
+      'homeBannerBadge': 'සජීවී දීමනා',
+      'homeBannerSubtitle': 'ආහාර • සුපිරි වෙළඳසල් • හෝටල් • වාරික',
       'quickFilters': 'ඉක්මන් පෙරහන',
       'endingSoon': 'ඉක්මනින් අවසන් වේ',
       'nearby': 'ආසන්න',
@@ -251,6 +259,9 @@ class AppLocalizations {
       'trendingCategories': 'பிரபலமான வகைகள்',
       'recentlyViewed': 'சமீபத்தில் பார்த்தவை',
       'allOffers': 'அனைத்து சலுகைகள்',
+      'homeBannerTitle': 'வங்கி அட்டை சலுகைகள், ஒரே இடத்தில்',
+      'homeBannerBadge': 'நேரடி சலுகைகள்',
+      'homeBannerSubtitle': 'உணவு • சூப்பர் மார்க்கெட் • ஹோட்டல் • தவணை',
       'quickFilters': 'விரைவு வடிகட்டிகள்',
       'endingSoon': 'விரைவில் முடிகிறது',
       'nearby': 'அருகில்',
@@ -479,7 +490,16 @@ class AppLocalizations {
     },
   };
 
+  /// [text] with `{name}` placeholders replaced from [params].
+  String format(String key, Map<String, Object> params) {
+    var value = text(key);
+    params.forEach((name, v) => value = value.replaceAll('{$name}', '$v'));
+    return value;
+  }
+
   String text(String key) =>
+      redesignStrings[locale.languageCode]?[key] ??
+      redesignStrings['en']?[key] ??
       _phaseOneValues[locale.languageCode]?[key] ??
       _phaseOneValues['en']?[key] ??
       _getLocalizedValue(key);
