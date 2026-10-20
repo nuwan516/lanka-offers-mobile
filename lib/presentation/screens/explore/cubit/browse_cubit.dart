@@ -58,12 +58,33 @@ class BrowseState extends Equatable {
   /// [base] after category and sort: what the list shows.
   final List<BankOffer> offers;
 
+  final bool isFetchingMore;
+  final bool hasReachedMax;
+
   const BrowseState({
     this.status = BrowseStatus.loading,
     this.filters = const BrowseFilters(),
     this.base = const [],
     this.offers = const [],
+    this.isFetchingMore = false,
+    this.hasReachedMax = false,
   });
+
+  BrowseState copyWith({
+    BrowseStatus? status,
+    BrowseFilters? filters,
+    List<BankOffer>? base,
+    List<BankOffer>? offers,
+    bool? isFetchingMore,
+    bool? hasReachedMax,
+  }) => BrowseState(
+    status: status ?? this.status,
+    filters: filters ?? this.filters,
+    base: base ?? this.base,
+    offers: offers ?? this.offers,
+    isFetchingMore: isFetchingMore ?? this.isFetchingMore,
+    hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+  );
 
   List<String> get categories =>
       (base
@@ -74,7 +95,14 @@ class BrowseState extends Equatable {
         ..sort());
 
   @override
-  List<Object?> get props => [status, filters, base, offers];
+  List<Object?> get props => [
+    status,
+    filters,
+    base,
+    offers,
+    isFetchingMore,
+    hasReachedMax,
+  ];
 }
 
 class BrowseCubit extends Cubit<BrowseState> {
@@ -105,11 +133,52 @@ class BrowseCubit extends Cubit<BrowseState> {
           filters: filters,
           base: base,
           offers: arrange(base, filters),
+          hasReachedMax: true,
         ),
       );
     } catch (_) {
       if (id != _request || isClosed) return;
       emit(BrowseState(status: BrowseStatus.failed, filters: filters));
+    }
+  }
+
+  /// Incremental page loading: `GET /api/offers?limit=...&offset=...`
+  Future<void> loadMore() async {
+    if (state.status != BrowseStatus.loaded ||
+        state.isFetchingMore ||
+        state.hasReachedMax) {
+      return;
+    }
+    emit(state.copyWith(isFetchingMore: true));
+    try {
+      final paged = await _repository.getOffersPage(
+        bank: state.filters.bankCode,
+        locationScope: state.filters.scope,
+        category: state.filters.category,
+        offset: state.base.length,
+        limit: 20,
+      );
+      if (isClosed) return;
+      final existingIds = state.base.map((o) => o.uniqueId).toSet();
+      final newItems =
+          paged.items
+              .whereType<BankOffer>()
+              .where((o) => !OfferSemantics.isExpired(o.validity))
+              .where((o) => !existingIds.contains(o.uniqueId))
+              .toList();
+      final newBase = [...state.base, ...newItems];
+      final reachedMax = newItems.isEmpty || newBase.length >= paged.total;
+      emit(
+        state.copyWith(
+          base: newBase,
+          offers: arrange(newBase, state.filters),
+          isFetchingMore: false,
+          hasReachedMax: reachedMax,
+        ),
+      );
+    } catch (_) {
+      if (isClosed) return;
+      emit(state.copyWith(isFetchingMore: false));
     }
   }
 

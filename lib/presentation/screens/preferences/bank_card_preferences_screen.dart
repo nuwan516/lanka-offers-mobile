@@ -234,15 +234,17 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.lock_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                                      Icon(Icons.info_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.85)),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          'No card numbers or personal details are collected or stored.',
+                                          'Your bank preferences are saved on this device. No card numbers or personal details are collected or stored.',
                                           style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.8),
+                                            color: Colors.white.withValues(alpha: 0.85),
                                             fontSize: 11,
+                                            height: 1.35,
                                           ),
                                         ),
                                       ),

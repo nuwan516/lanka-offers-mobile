@@ -390,7 +390,7 @@ class _Header extends StatelessWidget {
             BalanceHeader(
               count: totalOffers!,
               label: l10n.text('allOffers'),
-              deltaText: 'Live & verified across Sri Lanka',
+              deltaText: l10n.format('bankActiveOffers', {'count': totalOffers!}),
               isPositive: true,
             ),
           ],
@@ -448,34 +448,42 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 16),
           // Neobank Quick Action Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _QuickAction(
-                icon: Icons.near_me_outlined,
-                label: l10n.text('nearby'),
-                isDark: isDark,
-                onTap:
-                    () => TabNavigation.openExplore(
-                      const ExploreRequest(segment: ExploreSegment.nearby),
-                    ),
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.near_me_outlined,
+                  label: l10n.text('nearby'),
+                  isDark: isDark,
+                  onTap:
+                      () => TabNavigation.openExplore(
+                        const ExploreRequest(segment: ExploreSegment.nearby),
+                      ),
+                ),
               ),
-              _QuickAction(
-                icon: Icons.credit_card_outlined,
-                label: l10n.text('myCards'),
-                isDark: isDark,
-                onTap: () => context.push('/preferences'),
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.credit_card_outlined,
+                  label: l10n.text('myCards'),
+                  isDark: isDark,
+                  onTap: () => context.push('/preferences'),
+                ),
               ),
-              _QuickAction(
-                icon: Icons.timer_outlined,
-                label: l10n.text('endingSoon'),
-                isDark: isDark,
-                onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.timer_outlined,
+                  label: l10n.text('endingSoon'),
+                  isDark: isDark,
+                  onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+                ),
               ),
-              _QuickAction(
-                icon: Icons.explore_outlined,
-                label: l10n.text('allOffers'),
-                isDark: isDark,
-                onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.explore_outlined,
+                  label: l10n.text('allOffers'),
+                  isDark: isDark,
+                  onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+                ),
               ),
             ],
           ),
@@ -520,15 +528,17 @@ class _QuickAction extends StatelessWidget {
             child: Icon(icon, color: fg, size: 22),
           ),
           const SizedBox(height: 6),
-          SizedBox(
-            width: 72,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
               label,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
+              softWrap: true,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 11,
+                height: 1.25,
                 fontWeight: FontWeight.w600,
                 color: fg,
               ),

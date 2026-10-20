@@ -12,6 +12,16 @@ abstract class OfferRepository {
     String? category,
     String? locationScope,
   });
+
+  /// Scalable offset pagination: `GET /api/offers?limit=...&offset=...`
+  Future<({List<dynamic> items, int total})> getOffersPage({
+    String? bank,
+    String? category,
+    String? search,
+    String? locationScope,
+    int limit,
+    int offset,
+  });
   Future<List<BankSummary>> getBanks();
   Future<List<dynamic>> getOffersByType(OfferType type);
   Future<List<dynamic>> searchOffers(String query);

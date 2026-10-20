@@ -136,19 +136,36 @@ class _BrowseViewState extends State<BrowseView> {
           );
         }
         final shown = state.offers.take(_visible).toList();
+        final hasMoreLocal = shown.length < state.offers.length;
+        final hasMoreServer = !state.hasReachedMax;
+        final showFooter = hasMoreLocal || (hasMoreServer && state.isFetchingMore);
+
         return RefreshIndicator(
           onRefresh: () => cubit.load(state.filters),
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            itemCount:
-                shown.length + (shown.length < state.offers.length ? 1 : 0),
+            itemCount: shown.length + (showFooter ? 1 : 0),
             itemBuilder: (_, i) {
               if (i == shown.length) {
                 return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _visible += _pageSize),
-                    child: Text(l10n.text('showMore')),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: state.isFetchingMore
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : OutlinedButton(
+                            onPressed: () {
+                              if (hasMoreLocal) {
+                                setState(() => _visible += _pageSize);
+                              } else if (hasMoreServer) {
+                                cubit.loadMore();
+                              }
+                            },
+                            child: Text(l10n.text('showMore')),
+                          ),
                   ),
                 );
               }

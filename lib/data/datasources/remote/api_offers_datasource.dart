@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/constants/banks.dart';
 import '../../../core/semantics/offer_semantics.dart';
@@ -23,10 +21,6 @@ class ApiOffersDataSource {
   String get _base {
     const fromEnv = String.fromEnvironment('API_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
-    if (kDebugMode) {
-      if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:3001';
-      return 'http://localhost:3001';
-    }
     return _prodUrl;
   }
 
@@ -54,7 +48,7 @@ class ApiOffersDataSource {
     return (await _getOffersPage(params)).items;
   }
 
-  Future<({List<BankOffer> items, int total})> _fetchOffersPage({
+  Future<({List<BankOffer> items, int total})> fetchOffersPage({
     String? bank,
     String? category,
     String? search,
@@ -107,7 +101,7 @@ class ApiOffersDataSource {
     final all = <BankOffer>[];
     var offset = 0;
     for (;;) {
-      final page = await _fetchOffersPage(
+      final page = await fetchOffersPage(
         bank: bank,
         category: category,
         search: search,

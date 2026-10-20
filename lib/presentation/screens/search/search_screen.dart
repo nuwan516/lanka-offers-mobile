@@ -19,11 +19,20 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _controller = TextEditingController();
+  String? _filterBank;
+  String? _filterCategory;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _filterBank = null;
+      _filterCategory = null;
+    });
   }
 
   @override
@@ -39,9 +48,15 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: _controller,
               autofocus: true,
               textInputAction: TextInputAction.search,
-              onChanged: (value) => bloc.add(SearchQueryChanged(value)),
+              onChanged: (value) {
+                _clearFilters();
+                bloc.add(SearchQueryChanged(value));
+              },
               // Submitting searches immediately, skipping the debounce.
-              onSubmitted: (value) => bloc.add(PerformSearch(value)),
+              onSubmitted: (value) {
+                _clearFilters();
+                bloc.add(PerformSearch(value));
+              },
               decoration: InputDecoration(
                 hintText: l10n.text('searchBankOffers'),
                 border: InputBorder.none,
@@ -59,6 +74,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 icon: const Icon(Icons.clear),
                                 onPressed: () {
                                   _controller.clear();
+                                  _clearFilters();
                                   bloc.add(ClearSearch());
                                 },
                               ),
@@ -86,17 +102,136 @@ class _SearchScreenState extends State<SearchScreen> {
                     hint: l10n.text('tryAnotherSearch'),
                   );
                 }
-                return ListView.builder(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.results.length,
-                  itemBuilder:
-                      (_, index) => OfferCard(
-                        offer: state.results[index],
-                        contextOffers: state.results,
-                        initialIndex: index,
+
+                final banks =
+                    state.results
+                        .map((e) => e.bankCode ?? e.bankName)
+                        .where((e) => e.isNotEmpty)
+                        .toSet()
+                        .toList()
+                      ..sort();
+                final categories =
+                    state.results
+                        .map((e) => e.category)
+                        .where(
+                          (e) => e.isNotEmpty && e.toLowerCase() != 'all',
+                        )
+                        .toSet()
+                        .toList()
+                      ..sort();
+
+                final filtered =
+                    state.results.where((o) {
+                      final bankMatch =
+                          _filterBank == null ||
+                          (o.bankCode ?? o.bankName).toLowerCase() ==
+                              _filterBank!.toLowerCase();
+                      final catMatch =
+                          _filterCategory == null ||
+                          o.category == _filterCategory;
+                      return bankMatch && catMatch;
+                    }).toList();
+
+                final hasActiveFilter =
+                    _filterBank != null || _filterCategory != null;
+
+                return Column(
+                  children: [
+                    if (banks.length > 1 || categories.length > 1)
+                      SizedBox(
+                        height: 44,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          children: [
+                            if (hasActiveFilter)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                  end: 8,
+                                ),
+                                child: ActionChip(
+                                  avatar: const Icon(Icons.clear, size: 14),
+                                  label: Text(l10n.text('clearFilters')),
+                                  onPressed: _clearFilters,
+                                ),
+                              ),
+                            for (final b in banks)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                  end: 8,
+                                ),
+                                child: FilterChip(
+                                  label: Text(
+                                    b.toUpperCase(),
+                                  ),
+                                  selected: _filterBank == b,
+                                  onSelected:
+                                      (on) => setState(
+                                        () => _filterBank = on ? b : null,
+                                      ),
+                                ),
+                              ),
+                            for (final c in categories)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                  end: 8,
+                                ),
+                                child: FilterChip(
+                                  label: Text(c),
+                                  selected: _filterCategory == c,
+                                  onSelected:
+                                      (on) => setState(
+                                        () =>
+                                            _filterCategory = on ? c : null,
+                                      ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                      child: Row(
+                        children: [
+                          Text(
+                            l10n.format('offersCount', {
+                              'count': filtered.length,
+                            }),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child:
+                          filtered.isEmpty
+                              ? EmptyOffersView(
+                                title: l10n.text('emptyOffersTitle'),
+                                hint: l10n.text('clearFilters'),
+                                onClear: _clearFilters,
+                              )
+                              : ListView.builder(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  4,
+                                  16,
+                                  16,
+                                ),
+                                itemCount: filtered.length,
+                                itemBuilder:
+                                    (_, index) => OfferCard(
+                                      offer: filtered[index],
+                                      contextOffers: filtered,
+                                      initialIndex: index,
+                                    ),
+                              ),
+                    ),
+                  ],
                 );
               }
               final initial = state is SearchInitial ? state : SearchInitial();

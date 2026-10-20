@@ -29,6 +29,26 @@ class OfferRepositoryImpl implements OfferRepository {
   );
 
   @override
+  Future<({List<dynamic> items, int total})> getOffersPage({
+    String? bank,
+    String? category,
+    String? search,
+    String? locationScope,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final page = await _api.fetchOffersPage(
+      bank: bank,
+      category: category,
+      search: search,
+      locationScope: locationScope,
+      limit: limit,
+      offset: offset,
+    );
+    return (items: page.items, total: page.total);
+  }
+
+  @override
   Future<List<BankSummary>> getBanks() => _api.fetchBanks();
 
   @override

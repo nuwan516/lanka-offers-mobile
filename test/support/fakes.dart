@@ -121,6 +121,36 @@ class FakeOfferRepository implements OfferRepository {
   }
 
   @override
+  Future<({List<dynamic> items, int total})> getOffersPage({
+    String? bank,
+    String? category,
+    String? search,
+    String? locationScope,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    queries.add((bank: bank, category: category, scope: locationScope));
+    if (failure != null) throw failure!;
+    if (gate != null) {
+      final list = await gate!.future;
+      return (items: list, total: list.length);
+    }
+    final filtered = offers
+        .where((o) => bank == null || o.bankCode == bank)
+        .where((o) => category == null || o.category == category)
+        .where((o) => locationScope == null || o.locationScope == locationScope)
+        .where(
+          (o) =>
+              search == null ||
+              o.title.toLowerCase().contains(search.toLowerCase()) ||
+              o.merchantName.toLowerCase().contains(search.toLowerCase()),
+        )
+        .toList();
+    final paged = filtered.skip(offset).take(limit).toList();
+    return (items: paged, total: filtered.length);
+  }
+
+  @override
   Future<List<dynamic>> getAllOffers() async {
     if (failure != null) throw failure!;
     return offers;
