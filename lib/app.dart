@@ -50,6 +50,8 @@ class _LankaOffersAppState extends State<LankaOffersApp> {
     return MaterialApp.router(
       title: 'Lanka Offers',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: goRouter,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

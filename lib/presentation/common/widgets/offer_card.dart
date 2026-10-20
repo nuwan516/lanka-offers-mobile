@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/semantics/offer_semantics.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/repositories/user_repository.dart';
 import 'bank_badge.dart';
 import 'offer_presentation.dart';
 
-/// One offer in a list. Tapping opens the detail pager over [contextOffers].
+/// One offer in a list styled with friendly, trust-first neobank aesthetics.
+/// Tapping opens the detail pager over [contextOffers].
 class OfferCard extends StatefulWidget {
   const OfferCard({
     super.key,
@@ -41,6 +45,7 @@ class _OfferCardState extends State<OfferCard> {
   }
 
   Future<void> _toggleSaved() async {
+    HapticFeedback.selectionClick();
     final repository = getIt<UserRepository>();
     _saved
         ? await repository.unsaveOffer(widget.offer.uniqueId)
@@ -49,6 +54,7 @@ class _OfferCardState extends State<OfferCard> {
   }
 
   void _open() {
+    HapticFeedback.lightImpact();
     final offers = widget.contextOffers;
     context.push(
       '/offer/${widget.offer.uniqueId}',
@@ -71,7 +77,8 @@ class _OfferCardState extends State<OfferCard> {
     final isDark = theme.brightness == Brightness.dark;
     final offer = widget.offer;
     final secondary =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+        isDark ? AppColors.dTextSecondary : AppColors.lTextSecondary;
+    final cardBorder = isDark ? AppColors.dBorder : AppColors.lBorder;
 
     final benefit = OfferPresentation.benefit(l10n, offer);
     final validity = OfferPresentation.validity(l10n, offer.validity);
@@ -97,121 +104,135 @@ class _OfferCardState extends State<OfferCard> {
       ].join(', '),
       child: Opacity(
         opacity: expired ? 0.7 : 1,
-        child: Card(
+        child: Container(
           margin: EdgeInsets.only(bottom: widget.compact ? 8 : 12),
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isDark ? AppColors.darkBorder : AppColors.border,
-            ),
-          ),
-          child: InkWell(
-            onTap: _open,
-            child: Padding(
-              padding: EdgeInsets.all(pad),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child:
-                            offer.bankName.isNotEmpty
-                                ? BankBadge(
-                                  bankName: offer.bankCode ?? offer.bankName,
-                                )
-                                : const SizedBox.shrink(),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.dSurface : AppColors.lSurface,
+            borderRadius: BorderRadius.circular(Radii.lg),
+            border: Border.all(color: cardBorder, width: 1.0),
+            boxShadow:
+                isDark
+                    ? null
+                    : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints(
-                          minWidth: 44,
-                          minHeight: 44,
+                    ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(Radii.lg),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Radii.lg),
+              onTap: _open,
+              child: Padding(
+                padding: EdgeInsets.all(pad),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child:
+                              offer.bankName.isNotEmpty
+                                  ? BankBadge(
+                                    bankName: offer.bankCode ?? offer.bankName,
+                                  )
+                                  : const SizedBox.shrink(),
                         ),
-                        tooltip: _saved ? l10n.offerUnsaved : l10n.saveOffer,
-                        onPressed: _toggleSaved,
-                        icon: Icon(
-                          _saved ? Icons.favorite : Icons.favorite_border,
-                          size: 20,
-                          color: _saved ? AppColors.error : secondary,
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
+                          tooltip: _saved ? l10n.offerUnsaved : l10n.saveOffer,
+                          onPressed: _toggleSaved,
+                          icon: Icon(
+                            _saved ? Icons.favorite : Icons.favorite_border,
+                            size: 20,
+                            color: _saved ? AppColors.negative : secondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      merchant,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      offer.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        height: 1.35,
+                        color: secondary,
+                      ),
+                    ),
+                    if (benefit != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        benefit,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isDark ? AppColors.accent : AppColors.accent,
+                          fontFeatures: AppTextStyles.tabularFeatures,
                         ),
                       ),
                     ],
-                  ),
-                  Text(
-                    merchant,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    offer.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      height: 1.35,
-                      color: secondary,
-                    ),
-                  ),
-                  if (benefit != null) ...[
                     const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (offer.distanceKm != null &&
+                            OfferSemantics.hasConfirmedBranch(offer))
+                          _meta(
+                            Icons.near_me_outlined,
+                            _distance(offer.distanceKm!),
+                            secondary,
+                            bold: true,
+                          )
+                        else if (location != null)
+                          _meta(
+                            offer.locationScope == 'ONLINE'
+                               ? Icons.language
+                                : Icons.place_outlined,
+                            location,
+                            secondary,
+                          ),
+                        if (cardTypes.isNotEmpty)
+                          _meta(
+                            Icons.credit_card_outlined,
+                            cardTypes.join(' · '),
+                            secondary,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      benefit,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color:
-                            isDark ? AppColors.primaryLight : AppColors.primary,
+                      validity.text,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight:
+                            validity.tone == ValidityTone.neutral
+                                ? FontWeight.w400
+                                : FontWeight.w600,
+                        color: validity.color(isDark),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      if (offer.distanceKm != null &&
-                          OfferSemantics.hasConfirmedBranch(offer))
-                        _meta(
-                          Icons.near_me_outlined,
-                          _distance(offer.distanceKm!),
-                          secondary,
-                          bold: true,
-                        )
-                      else if (location != null)
-                        _meta(
-                          offer.locationScope == 'ONLINE'
-                              ? Icons.language
-                              : Icons.place_outlined,
-                          location,
-                          secondary,
-                        ),
-                      if (cardTypes.isNotEmpty)
-                        _meta(
-                          Icons.credit_card_outlined,
-                          cardTypes.join(' · '),
-                          secondary,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    validity.text,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight:
-                          validity.tone == ValidityTone.neutral
-                              ? FontWeight.w400
-                              : FontWeight.w600,
-                      color: validity.color(isDark),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

@@ -201,7 +201,7 @@ class _EventsMapViewScreenState extends State<EventsMapViewScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.lanka_offers',
+                userAgentPackageName: 'com.lankalk.offers',
                 maxZoom: 19,
               ),
               if (_routePoints != null && _routePoints!.isNotEmpty)

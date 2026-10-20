@@ -1,24 +1,26 @@
+import 'app_spacing.dart';
+
 class AppDimensions {
   // Padding
-  static const double paddingXS = 4.0;
-  static const double paddingS = 8.0;
-  static const double paddingM = 16.0;
-  static const double paddingL = 24.0;
-  static const double paddingXL = 32.0;
+  static const double paddingXS = Gap.xs;
+  static const double paddingS = Gap.sm;
+  static const double paddingM = Gap.lg;
+  static const double paddingL = Gap.xl;
+  static const double paddingXL = Gap.xxl;
 
   // Margin
-  static const double marginXS = 4.0;
-  static const double marginS = 8.0;
-  static const double marginM = 16.0;
-  static const double marginL = 24.0;
-  static const double marginXL = 32.0;
+  static const double marginXS = Gap.xs;
+  static const double marginS = Gap.sm;
+  static const double marginM = Gap.lg;
+  static const double marginL = Gap.xl;
+  static const double marginXL = Gap.xxl;
 
   // Border Radius
-  static const double radiusS = 8.0;
-  static const double radiusM = 12.0;
-  static const double radiusL = 16.0;
-  static const double radiusXL = 24.0;
-  static const double radiusCircular = 999.0;
+  static const double radiusS = Radii.sm;
+  static const double radiusM = Radii.md;
+  static const double radiusL = Radii.lg;
+  static const double radiusXL = Radii.xl;
+  static const double radiusCircular = Radii.pill;
 
   // Icon Sizes
   static const double iconXS = 16.0;

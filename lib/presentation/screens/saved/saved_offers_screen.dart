@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../common/widgets/error_view.dart';
 import '../../common/widgets/offer_card.dart';
 import 'bloc/saved_bloc.dart';
@@ -19,6 +21,8 @@ class SavedOffersScreen extends StatelessWidget {
     child: Builder(
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return Scaffold(
           appBar: AppBar(title: Text(l10n.savedOffers)),
           body: BlocBuilder<SavedBloc, SavedState>(
@@ -41,26 +45,72 @@ class SavedOffersScreen extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.bookmark_border, size: 64),
-                        const SizedBox(height: 12),
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                          ),
+                          child: const Icon(
+                            Icons.bookmark_border_rounded,
+                            size: 36,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
                         Text(
                           l10n.noSavedOffers,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          l10n.text('noSavedBody'),
-                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          l10n.text('storedOnDevice'),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          l10n.text('noSavedBody'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color:
+                                isDark
+                                    ? AppColors.dTextSecondary
+                                    : AppColors.lTextSecondary,
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark
+                                    ? AppColors.dSurfaceHigh
+                                    : AppColors.lSurfaceHigh,
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                          ),
+                          child: Text(
+                            l10n.text('storedOnDevice'),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: AppColors.onAccent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Radii.md),
+                            ),
+                          ),
                           onPressed: () => context.push('/explore'),
-                          child: Text(l10n.text('exploreOffers')),
+                          child: Text(
+                            l10n.text('exploreOffers'),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ],
                     ),
@@ -72,21 +122,20 @@ class SavedOffersScreen extends StatelessWidget {
                     () async =>
                         context.read<SavedBloc>().add(RefreshSavedOffers()),
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   itemCount: state.offers.length,
                   itemBuilder:
                       (_, index) => Dismissible(
                         key: ValueKey(state.offers[index].uniqueId),
                         direction: DismissDirection.endToStart,
-                        background: const ColoredBox(
-                          color: Colors.red,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Icon(Icons.delete, color: Colors.white),
-                            ),
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: AppColors.negative,
+                            borderRadius: BorderRadius.circular(Radii.lg),
                           ),
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
                         onDismissed:
                             (_) => context.read<SavedBloc>().add(

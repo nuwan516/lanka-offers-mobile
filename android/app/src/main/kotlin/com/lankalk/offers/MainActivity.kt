@@ -1,4 +1,4 @@
-package com.example.lanka_offers
+package com.lankalk.offers
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -76,7 +76,7 @@ class _MapViewState extends State<MapView> {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.lanka_offers',
+              userAgentPackageName: 'com.lankalk.offers',
               maxZoom: 19,
             ),
             MarkerLayer(markers: _buildMarkers()),

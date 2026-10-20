@@ -10,6 +10,7 @@ import '../../../core/localization/app_localizations.dart';
 import '../../../core/semantics/offer_semantics.dart';
 import '../../../core/services/phase_two_survey_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/location.dart';
 import '../../../domain/repositories/offer_repository.dart';
@@ -585,7 +586,13 @@ class _Fact extends StatelessWidget {
       children: [
         Expanded(child: Text(label)),
         const SizedBox(width: 12),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontFeatures: AppTextStyles.tabularFeatures,
+          ),
+        ),
       ],
     ),
   );
@@ -682,7 +689,7 @@ class _OfferLocationMap extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.lanka_offers',
+              userAgentPackageName: 'com.lankalk.offers',
               maxZoom: 19,
               errorTileCallback: (tile, error, stackTrace) {},
             ),

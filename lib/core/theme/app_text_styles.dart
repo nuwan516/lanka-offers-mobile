@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-class AppTextStyles {
+abstract final class AppTextStyles {
   /// Latin text uses Inter; these cover Sinhala and Tamil glyphs on each platform.
   static const List<String> fontFallback = [
     'Noto Sans Sinhala',
@@ -12,131 +12,129 @@ class AppTextStyles {
     'Latha',
   ];
 
-  // Display
-  static TextStyle display1 = GoogleFonts.inter(
-    fontSize: 32,
+  static const List<FontFeature> tabularFeatures = [
+    FontFeature.tabularFigures(),
+  ];
+
+  // Ready-inspired Typography roles
+  static TextStyle displayLarge = GoogleFonts.inter(
+    fontSize: 40,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.2,
+    letterSpacing: -1.0,
+    color: AppColors.lTextPrimary,
+    fontFeatures: tabularFeatures,
   ).copyWith(fontFamilyFallback: fontFallback);
 
-  static TextStyle display2 = GoogleFonts.inter(
+  static TextStyle headlineMedium = GoogleFonts.inter(
     fontSize: 28,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    height: 1.25,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
-  // Headings
-  static TextStyle h1 = GoogleFonts.inter(
-    fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.3,
+    color: AppColors.lTextPrimary,
+    letterSpacing: -0.5,
   ).copyWith(fontFamilyFallback: fontFallback);
 
-  static TextStyle h2 = GoogleFonts.inter(
+  static TextStyle titleLarge = GoogleFonts.inter(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    height: 1.3,
+    color: AppColors.lTextPrimary,
+    letterSpacing: -0.3,
   ).copyWith(fontFamilyFallback: fontFallback);
 
+  static TextStyle titleMedium = GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.lTextPrimary,
+  ).copyWith(fontFamilyFallback: fontFallback);
+
+  static TextStyle bodyLarge = GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    color: AppColors.lTextPrimary,
+  ).copyWith(fontFamilyFallback: fontFallback);
+
+  static TextStyle bodyMedium = GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    color: AppColors.lTextSecondary,
+  ).copyWith(fontFamilyFallback: fontFallback);
+
+  static TextStyle labelLarge = GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.lTextPrimary,
+  ).copyWith(fontFamilyFallback: fontFallback);
+
+  static TextStyle labelSmall = GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.lTextSecondary,
+  ).copyWith(fontFamilyFallback: fontFallback);
+
+  // Backward-compatible aliases for existing screens
+  static TextStyle display1 = displayLarge;
+  static TextStyle display2 = headlineMedium;
+  static TextStyle h1 = headlineMedium;
+  static TextStyle h2 = titleLarge;
   static TextStyle h3 = GoogleFonts.inter(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.lTextPrimary,
     height: 1.35,
   ).copyWith(fontFamilyFallback: fontFallback);
+  static TextStyle h4 = titleMedium;
 
-  static TextStyle h4 = GoogleFonts.inter(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    height: 1.4,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
-  // Body
-  static TextStyle body1 = GoogleFonts.inter(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-    height: 1.5,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
-  static TextStyle body2 = GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
-    height: 1.5,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
+  static TextStyle body1 = bodyLarge;
   static TextStyle body1Medium = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-    height: 1.5,
+    color: AppColors.lTextPrimary,
+    height: 1.4,
+  ).copyWith(fontFamilyFallback: fontFallback);
+  static TextStyle body1SemiBold = GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.lTextPrimary,
+    height: 1.4,
   ).copyWith(fontFamilyFallback: fontFallback);
 
+  static TextStyle body2 = bodyMedium;
   static TextStyle body2Medium = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-    height: 1.5,
+    color: AppColors.lTextSecondary,
+    height: 1.4,
   ).copyWith(fontFamilyFallback: fontFallback);
-
-  // Caption & Small
-  static TextStyle caption = GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+  static TextStyle body2SemiBold = GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.lTextPrimary,
     height: 1.4,
   ).copyWith(fontFamilyFallback: fontFallback);
 
+  static TextStyle caption = labelSmall;
   static TextStyle captionMedium = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
-    height: 1.4,
+    color: AppColors.lTextSecondary,
   ).copyWith(fontFamilyFallback: fontFallback);
 
   static TextStyle overline = GoogleFonts.inter(
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FontWeight.w600,
-    color: AppColors.textTertiary,
-    height: 1.6,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    color: AppColors.lTextTertiary,
   ).copyWith(fontFamilyFallback: fontFallback);
 
-  // Button
   static TextStyle button = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textOnPrimary,
-    height: 1.25,
-    letterSpacing: 0.2,
+    color: Colors.white,
   ).copyWith(fontFamilyFallback: fontFallback);
 
   static TextStyle buttonSmall = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textOnPrimary,
-    height: 1.25,
-    letterSpacing: 0.2,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
-  // Price/Discount
-  static TextStyle price = GoogleFonts.inter(
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    color: AppColors.primary,
-    height: 1.2,
-  ).copyWith(fontFamilyFallback: fontFallback);
-
-  static TextStyle discount = GoogleFonts.inter(
-    fontSize: 28,
-    fontWeight: FontWeight.w800,
-    color: AppColors.primary,
-    height: 1.2,
+    color: Colors.white,
   ).copyWith(fontFamilyFallback: fontFallback);
 }

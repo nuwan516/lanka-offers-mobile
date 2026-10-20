@@ -8,7 +8,7 @@
 PRODUCT_NAME = lanka_offers
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.lankaOffers
+PRODUCT_BUNDLE_IDENTIFIER = com.lankalk.offers
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.lankalk. All rights reserved.
