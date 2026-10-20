@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/motion.dart';
-import '../../../core/widgets/pressable.dart';
 
 class BalanceHeader extends StatefulWidget {
   const BalanceHeader({
@@ -13,6 +11,7 @@ class BalanceHeader extends StatefulWidget {
     this.deltaText,
     this.isPositive = true,
     this.trailing,
+    this.padding = const EdgeInsets.symmetric(vertical: Gap.sm),
   });
 
   final int count;
@@ -20,19 +19,13 @@ class BalanceHeader extends StatefulWidget {
   final String? deltaText;
   final bool isPositive;
   final Widget? trailing;
+  final EdgeInsetsGeometry padding;
 
   @override
   State<BalanceHeader> createState() => _BalanceHeaderState();
 }
 
 class _BalanceHeaderState extends State<BalanceHeader> {
-  bool _hidden = false;
-
-  void _toggleHidden() {
-    HapticFeedback.selectionClick();
-    setState(() => _hidden = !_hidden);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -41,7 +34,7 @@ class _BalanceHeaderState extends State<BalanceHeader> {
     final color = widget.isPositive ? AppColors.positive : AppColors.negative;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
+      padding: widget.padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,49 +50,26 @@ class _BalanceHeaderState extends State<BalanceHeader> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 8),
-              Pressable(
-                onTap: _toggleHidden,
-                child: Icon(
-                  _hidden
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 16,
-                  color:
-                      isDark
-                          ? AppColors.dTextTertiary
-                          : AppColors.lTextTertiary,
-                ),
-              ),
               const Spacer(),
               if (widget.trailing != null) widget.trailing!,
             ],
           ),
           const SizedBox(height: 6),
-          if (_hidden)
-            Text(
-              '••••••',
-              style: textTheme.displayLarge?.copyWith(
-                letterSpacing: 4.0,
-                color:
-                    isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary,
-              ),
-            )
-          else
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: widget.count.toDouble()),
-              duration: Motion.slow,
-              curve: Motion.countUp,
-              builder: (_, value, __) {
-                return Text(
-                  '${value.round()}',
-                  style: textTheme.displayLarge?.copyWith(
-                    color:
-                        isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary,
-                  ),
-                );
-              },
-            ),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: widget.count.toDouble()),
+            duration: Motion.slow,
+            curve: Motion.countUp,
+            builder: (_, value, __) {
+              return Text(
+                '${value.round()}',
+                style: textTheme.displayLarge?.copyWith(
+                  color:
+                      isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              );
+            },
+          ),
           if (widget.deltaText != null) ...[
             const SizedBox(height: 8),
             Container(
@@ -123,11 +93,15 @@ class _BalanceHeaderState extends State<BalanceHeader> {
                     color: color,
                   ),
                   const SizedBox(width: 5),
-                  Text(
-                    widget.deltaText!,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      widget.deltaText!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

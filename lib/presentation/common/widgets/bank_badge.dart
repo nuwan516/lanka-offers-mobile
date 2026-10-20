@@ -37,7 +37,8 @@ class BankBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final name = CanonicalBanks.nameFor(bankName);
+    final lang = Localizations.maybeLocaleOf(context)?.languageCode;
+    final name = CanonicalBanks.nameFor(bankName, lang);
     final fg = isDark ? AppColors.primaryLight : AppColors.primary;
     final chip = Container(
       constraints: const BoxConstraints(minWidth: 32),

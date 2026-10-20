@@ -10,7 +10,6 @@ import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../domain/repositories/offer_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
-import '../../common/widgets/flip_card.dart';
 
 class BankCardPreferencesScreen extends StatefulWidget {
   const BankCardPreferencesScreen({super.key});
@@ -145,43 +144,112 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                           vertical: 16,
                         ),
                         children: [
-                          // Interactive 3D Virtual Card Hero
-                          FlipCard(
-                            front: VirtualCardFront(
-                              bankName: displayBank,
-                              cardType: displayType,
-                              network: displayNetwork,
-                              maskedNumber: '•••• 7721',
-                              accentGradient:
-                                  isDark
-                                      ? null
-                                      : const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF0F5F5C),
-                                          Color(0xFF0A4644),
-                                          Color(0xFF06302E),
-                                        ],
-                                      ),
-                            ),
-                            back: VirtualCardBack(
-                              bankName: displayBank,
-                              securityNotice:
-                                  'Tap card to flip • Preferences stored locally with privacy',
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: Text(
-                              'Tap card to view security details',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color:
-                                    isDark
-                                        ? AppColors.dTextTertiary
-                                        : AppColors.lTextTertiary,
+                          // Bank Card Filter Preferences Summary
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF0F5F5C),
+                                  Color(0xFF0A4644),
+                                ],
                               ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F5F5C).withValues(alpha: 0.25),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.credit_card_rounded, color: Colors.white, size: 20),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Card Filter Preferences',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.18),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'LOCAL ONLY',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 18),
+                                Text(
+                                  displayBank,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '$displayType • $displayNetwork',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.lock_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'No card numbers or personal details are collected or stored.',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.8),
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 24),

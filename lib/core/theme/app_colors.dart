@@ -1,54 +1,55 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  // Ready-inspired Accent (warm coral-orange CTA)
-  static const Color accent = Color(0xFFFF7A4D);
-  static const Color accentPressed = Color(0xFFE5643A);
-  static const Color onAccent = Color(0xFF1A0E09);
-
-  // Sri Lanka Bank Deals Brand Teal
+  // Sri Lanka Bank Deals Brand Teal (Core Identity)
   static const Color brandTeal = Color(0xFF0F5F5C);
   static const Color brandTealLight = Color(0xFF2A8A85);
   static const Color brandTealSoft = Color(0xFFE6F2F1);
+  static const Color brandTealDark = Color(0xFF0A4644);
 
-  // Dark theme neutrals (dark-first neobank)
+  // Primary Action Accent (Restrained Deep Teal CTA)
+  static const Color accent = brandTeal;
+  static const Color accentPressed = brandTealDark;
+  static const Color onAccent = Colors.white;
+
+  // Dark theme neutrals (Calm dark mode)
   static const Color dBackground = Color(0xFF0C0C0F);
   static const Color dSurface = Color(0xFF16161B);
   static const Color dSurfaceHigh = Color(0xFF1F1F26);
   static const Color dBorder = Color(0xFF2B2B34);
-  static const Color dTextPrimary = Color(0xFFF6F6F8);
-  static const Color dTextSecondary = Color(0xFFA3A3B0);
-  static const Color dTextTertiary = Color(0xFF6F6F7C);
+  static const Color dTextPrimary = Color(0xFFEFF6F2);
+  static const Color dTextSecondary = Color(0xFFAABAB1);
+  static const Color dTextTertiary = Color(0xFF6F7C75);
 
-  // Light theme neutrals
+  // Light theme neutrals (Warm-gray editorial)
   static const Color lBackground = Color(0xFFF7F6F4);
   static const Color lSurface = Color(0xFFFFFFFF);
   static const Color lSurfaceHigh = Color(0xFFF0EEEA);
   static const Color lBorder = Color(0xFFE4E1DB);
-  static const Color lTextPrimary = Color(0xFF15151A);
-  static const Color lTextSecondary = Color(0xFF63636E);
-  static const Color lTextTertiary = Color(0xFF9A9AA5);
+  static const Color lTextPrimary = Color(0xFF162521);
+  static const Color lTextSecondary = Color(0xFF596963);
+  static const Color lTextTertiary = Color(0xFF8C9893);
 
-  // Semantic
-  static const Color positive = Color(0xFF3DD68C);
-  static const Color negative = Color(0xFFFF5D6C);
-  static const Color warning = Color(0xFFFFC24D);
-  static const Color info = Color(0xFF5AA9FF);
+  // Semantic (Calm, source-truthful)
+  static const Color positive = Color(0xFF1C7554);
+  static const Color negative = Color(0xFFB93838);
+  static const Color warning = Color(0xFF8A5D15);
+  static const Color info = Color(0xFF2563EB);
 
   // Backward-compatible aliases for existing screens & tests
   static const Color primary = brandTeal;
-  static const Color primaryVariant = Color(0xFF0A4644);
+  static const Color primaryVariant = brandTealDark;
   static const Color primaryLight = brandTealLight;
   static const Color primarySoft = brandTealSoft;
 
-  static const Color secondary = accent;
-  static const Color secondaryVariant = accentPressed;
-  static const Color secondaryLight = Color(0xFFFF9570);
-  static const Color secondarySoft = Color(0xFFFFF0EA);
+  static const Color secondary = Color(0xFFB45309);
+  static const Color secondaryVariant = Color(0xFF92400E);
+  static const Color secondaryLight = Color(0xFFFDE68A);
+  static const Color secondarySoft = Color(0xFFFEF3C7);
 
   static const Color flashYellow = warning;
   static const Color hotRed = negative;
-  static const Color accentLight = secondaryLight;
+  static const Color accentLight = brandTealLight;
 
   static const Color background = lBackground;
   static const Color surface = lSurface;

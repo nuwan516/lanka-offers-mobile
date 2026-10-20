@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Lanka Offers uses your location to show bank-card discounts and promotions near you.</string>
 </dict>
 </plist>

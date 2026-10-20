@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -117,17 +116,14 @@ class _HomeViewState extends State<_HomeView> {
                               response == null
                                   ? null
                                   : () async {
-                                    await service.submitResponse(
-                                      response!,
-                                      DateTime.now(),
-                                    );
+                                    await service.submit(response: response!);
                                     if (context.mounted) Navigator.pop(context);
                                   },
                           child: Text(l10n.text('submitFeedback')),
                         ),
                         TextButton(
                           onPressed: () async {
-                            await service.optOut();
+                            await service.dismiss(optOut: true);
                             if (context.mounted) Navigator.pop(context);
                           },
                           child: Text(l10n.text('dontAskAgain')),
@@ -370,13 +366,13 @@ class _Header extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.shield_outlined,
+                      Icons.verified_outlined,
                       size: 13,
                       color: AppColors.positive,
                     ),
                     SizedBox(width: 4),
                     Text(
-                      'STAGED 100%',
+                      'LIVE OFFERS',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -393,8 +389,8 @@ class _Header extends StatelessWidget {
             const SizedBox(height: 16),
             BalanceHeader(
               count: totalOffers!,
-              label: 'Verified Bank Deals',
-              deltaText: 'Live & active across Sri Lanka',
+              label: l10n.text('allOffers'),
+              deltaText: 'Live & verified across Sri Lanka',
               isPositive: true,
             ),
           ],
@@ -440,6 +436,15 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed:
+                () => TabNavigation.openExplore(
+                  const ExploreRequest(segment: ExploreSegment.nearby),
+                ),
+            icon: const Icon(Icons.near_me_outlined, size: 18),
+            label: Text(l10n.text('nearbyOffers')),
+          ),
           const SizedBox(height: 16),
           // Neobank Quick Action Row
           Row(
@@ -447,7 +452,7 @@ class _Header extends StatelessWidget {
             children: [
               _QuickAction(
                 icon: Icons.near_me_outlined,
-                label: l10n.text('nearbyOffers'),
+                label: l10n.text('nearby'),
                 isDark: isDark,
                 onTap:
                     () => TabNavigation.openExplore(
@@ -698,7 +703,7 @@ class BankTile extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                bank.name,
+                bank.localizedName(l10n.locale.languageCode),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(

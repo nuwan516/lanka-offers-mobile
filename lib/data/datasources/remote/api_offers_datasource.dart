@@ -381,10 +381,35 @@ class ApiOffersDataSource {
   String _bankLabel(String bank) =>
       CanonicalBanks.lookup(bank)?.name ?? bank.toUpperCase();
 
+  static final RegExp _dateOnlyRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
   DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
+    final s = v.toString().trim();
+    if (s.isEmpty) return null;
     try {
-      return DateTime.parse(v.toString()).toLocal();
+      // Date-only (YYYY-MM-DD): represents a calendar day in Sri Lanka.
+      // Parse as UTC date so no local device timezone shifts the calendar date.
+      if (_dateOnlyRegex.hasMatch(s)) {
+        final parts = s.split('-');
+        return DateTime.utc(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+      }
+
+      // Full timestamp: normalize to Asia/Colombo calendar day.
+      final dt = DateTime.parse(s);
+      final colombo = dt.toUtc().add(OfferSemantics.colomboOffset);
+      return DateTime.utc(
+        colombo.year,
+        colombo.month,
+        colombo.day,
+        colombo.hour,
+        colombo.minute,
+        colombo.second,
+      );
     } catch (_) {
       return null;
     }

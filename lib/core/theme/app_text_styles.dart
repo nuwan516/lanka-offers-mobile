@@ -48,26 +48,28 @@ abstract final class AppTextStyles {
   static TextStyle bodyLarge = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    height: 1.4,
+    height: 1.5,
     color: AppColors.lTextPrimary,
   ).copyWith(fontFamilyFallback: fontFallback);
 
   static TextStyle bodyMedium = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    height: 1.4,
+    height: 1.5,
     color: AppColors.lTextSecondary,
   ).copyWith(fontFamilyFallback: fontFallback);
 
   static TextStyle labelLarge = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
+    height: 1.4,
     color: AppColors.lTextPrimary,
   ).copyWith(fontFamilyFallback: fontFallback);
 
   static TextStyle labelSmall = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w500,
+    height: 1.4,
     color: AppColors.lTextSecondary,
   ).copyWith(fontFamilyFallback: fontFallback);
 

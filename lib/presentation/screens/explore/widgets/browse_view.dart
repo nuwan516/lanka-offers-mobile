@@ -6,6 +6,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../common/widgets/skeletons.dart';
 import '../../../common/widgets/offer_card.dart';
+import '../../../common/widgets/offer_presentation.dart';
 import '../../../common/widgets/state_views.dart';
 import '../cubit/browse_cubit.dart';
 
@@ -55,7 +56,12 @@ class _BrowseViewState extends State<BrowseView> {
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: InputChip(
-                    label: Text(CanonicalBanks.nameFor(filters.bankCode)),
+                    label: Text(
+                      CanonicalBanks.nameFor(
+                        filters.bankCode,
+                        l10n.locale.languageCode,
+                      ),
+                    ),
                     onDeleted:
                         () => cubit.load(filters.copyWith(clearBank: true)),
                   ),
@@ -206,6 +212,7 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       height: 44,
       child: ListView(
@@ -216,7 +223,7 @@ class _CategoryChips extends StatelessWidget {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
               child: FilterChip(
-                label: Text(c),
+                label: Text(OfferPresentation.category(l10n, c)),
                 selected: selected == c,
                 onSelected: (on) => onSelected(on ? c : null),
               ),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
@@ -39,10 +40,10 @@ abstract final class AppTheme {
   }) {
     final scheme = ColorScheme(
       brightness: brightness,
-      primary: AppColors.accent,
-      onPrimary: AppColors.onAccent,
-      secondary: AppColors.accent,
-      onSecondary: AppColors.onAccent,
+      primary: brightness == Brightness.dark ? AppColors.brandTealLight : AppColors.brandTeal,
+      onPrimary: Colors.white,
+      secondary: AppColors.secondary,
+      onSecondary: Colors.white,
       error: AppColors.negative,
       onError: Colors.white,
       surface: surface,
@@ -91,27 +92,29 @@ abstract final class AppTheme {
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
       bodyLarge: GoogleFonts.inter(
         fontSize: 16,
-        height: 1.4,
+        height: 1.5,
         color: text,
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
       bodyMedium: GoogleFonts.inter(
         fontSize: 14,
-        height: 1.4,
+        height: 1.5,
         color: textSecondary,
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
       bodySmall: GoogleFonts.inter(
         fontSize: 12,
-        height: 1.4,
+        height: 1.45,
         color: textSecondary,
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
       labelLarge: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w600,
+        height: 1.4,
         color: text,
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
       labelSmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w500,
+        height: 1.4,
         color: textSecondary,
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
     );

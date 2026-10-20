@@ -35,6 +35,53 @@ class OfferPresentation {
     locale.languageCode,
   ).format(OfferSemantics.colomboDate(date));
 
+  /// Natural localized label for Sri Lankan bank promotion categories.
+  static String category(AppLocalizations l10n, String raw) {
+    final lang = l10n.locale.languageCode;
+    final key = raw.trim().toLowerCase();
+    if (key.contains('din') || key.contains('food') || key.contains('restaur')) {
+      if (lang == 'si') return 'ආපනශාලා';
+      if (lang == 'ta') return 'உணவகம்';
+      return 'Dining';
+    }
+    if (key.contains('super') || key.contains('grocer')) {
+      if (lang == 'si') return 'සුපිරි වෙළඳසැල්';
+      if (lang == 'ta') return 'பல்பொருள் அங்காடி';
+      return 'Supermarket';
+    }
+    if (key.contains('shop') || key.contains('cloth') || key.contains('retail')) {
+      if (lang == 'si') return 'සාප්පු සවාරි';
+      if (lang == 'ta') return 'ஷாப்பிங்';
+      return 'Shopping';
+    }
+    if (key.contains('trav') || key.contains('hotel') || key.contains('leis')) {
+      if (lang == 'si') return 'සංචාරක සහ හෝටල්';
+      if (lang == 'ta') return 'பயணம் மற்றும் விடுதிகள்';
+      return 'Travel & Hotels';
+    }
+    if (key.contains('health') || key.contains('medic') || key.contains('hosp')) {
+      if (lang == 'si') return 'සෞඛ්‍ය සේවා';
+      if (lang == 'ta') return 'சுகாதாரம்';
+      return 'Healthcare';
+    }
+    if (key.contains('elect') || key.contains('tech') || key.contains('appliance')) {
+      if (lang == 'si') return 'ඉලෙක්ට්‍රොනික';
+      if (lang == 'ta') return 'மின்னணுவியல்';
+      return 'Electronics';
+    }
+    if (key.contains('install') || key.contains('easy payment')) {
+      if (lang == 'si') return 'වාරික';
+      if (lang == 'ta') return 'தவணைகள்';
+      return 'Installments';
+    }
+    if (key.contains('auto')) {
+      if (lang == 'si') return 'මෝටර් රථ සේවා';
+      if (lang == 'ta') return 'வாகன பராமரிப்பு';
+      return 'Autocare';
+    }
+    return raw;
+  }
+
   /// Expiry wording and its tone, from the Sri Lanka calendar day.
   static ValidityLabel validity(
     AppLocalizations l10n,
