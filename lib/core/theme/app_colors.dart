@@ -25,10 +25,10 @@ abstract final class AppColors {
   static const Color lBackground = Color(0xFFF7F6F4);
   static const Color lSurface = Color(0xFFFFFFFF);
   static const Color lSurfaceHigh = Color(0xFFF0EEEA);
-  static const Color lBorder = Color(0xFFE4E1DB);
-  static const Color lTextPrimary = Color(0xFF162521);
-  static const Color lTextSecondary = Color(0xFF596963);
-  static const Color lTextTertiary = Color(0xFF8C9893);
+  static const Color lBorder = Color(0xFFE6E9E6);
+  static const Color lTextPrimary = Color(0xFF172321);
+  static const Color lTextSecondary = Color(0xFF697370);
+  static const Color lTextTertiary = Color(0xFF8A9491);
 
   // Semantic (Calm, source-truthful)
   static const Color positive = Color(0xFF1C7554);

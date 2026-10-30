@@ -145,8 +145,8 @@ class _OfferCardState extends State<OfferCard> {
                         IconButton(
                           visualDensity: VisualDensity.compact,
                           constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
+                            minWidth: 40,
+                            minHeight: 40,
                           ),
                           tooltip: _saved ? l10n.offerUnsaved : l10n.saveOffer,
                           onPressed: _toggleSaved,
@@ -158,12 +158,14 @@ class _OfferCardState extends State<OfferCard> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       merchant,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -178,14 +180,30 @@ class _OfferCardState extends State<OfferCard> {
                       ),
                     ),
                     if (benefit != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        benefit,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
                           color:
-                              isDark ? AppColors.accent : AppColors.accent,
-                          fontFeatures: AppTextStyles.tabularFeatures,
+                              isDark
+                                  ? AppColors.brandTeal.withValues(alpha: 0.25)
+                                  : AppColors.brandTealSoft,
+                          borderRadius: BorderRadius.circular(Radii.pill),
+                        ),
+                        child: Text(
+                          benefit,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                isDark
+                                    ? AppColors.brandTealLight
+                                    : AppColors.brandTeal,
+                            fontFeatures: AppTextStyles.tabularFeatures,
+                          ),
                         ),
                       ),
                     ],
@@ -206,7 +224,7 @@ class _OfferCardState extends State<OfferCard> {
                         else if (location != null)
                           _meta(
                             offer.locationScope == 'ONLINE'
-                               ? Icons.language
+                                ? Icons.language
                                 : Icons.place_outlined,
                             location,
                             secondary,
