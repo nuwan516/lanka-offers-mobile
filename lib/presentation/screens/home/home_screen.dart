@@ -14,7 +14,6 @@ import '../../../core/widgets/pressable.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/entities/bank_summary.dart';
 import '../../../domain/repositories/user_repository.dart';
-import '../../common/widgets/balance_header.dart';
 import '../../common/widgets/skeletons.dart';
 import '../../common/widgets/offer_card.dart';
 import '../../common/widgets/state_views.dart';
@@ -221,26 +220,90 @@ class _HomeViewState extends State<_HomeView> {
       SliverToBoxAdapter(
         child: _Section(
           title: l10n.text('sectionBanks'),
+          actionText: l10n.seeAll,
+          onAction: () => TabNavigation.openExplore(const ExploreRequest()),
           child: _BankGrid(banks: state.banks),
         ),
       ),
       if (categories.isNotEmpty)
         SliverToBoxAdapter(
-          child: _Section(
-            title: l10n.text('sectionCategories'),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final c in categories)
-                  ActionChip(
-                    avatar: Icon(c.icon, size: 16),
-                    label: Text(c.name),
-                    onPressed:
-                        () => TabNavigation.openExplore(
-                          ExploreRequest(category: c.name),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.text('sectionCategories'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
+                      ),
+                      if (live.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.brandTealSoft,
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                          ),
+                          child: Text(
+                            l10n.format('offersCount', {'count': live.length}),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandTeal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: categories.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      if (i == 0) {
+                        return ActionChip(
+                          avatar: const Icon(Icons.apps_rounded, size: 16),
+                          label: Text(l10n.text('allOffers')),
+                          onPressed:
+                              () => TabNavigation.openExplore(
+                                const ExploreRequest(),
+                              ),
+                        );
+                      }
+                      final c = categories[i - 1];
+                      return ActionChip(
+                        avatar: Icon(c.icon, size: 16),
+                        label: Text(c.name),
+                        onPressed:
+                            () => TabNavigation.openExplore(
+                              ExploreRequest(category: c.name),
+                            ),
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -268,7 +331,7 @@ class _HomeViewState extends State<_HomeView> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 8, 8),
+            padding: const EdgeInsets.fromLTRB(16, 20, 8, 8),
             child: Row(
               children: [
                 Expanded(
@@ -319,93 +382,108 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textPrimary =
+        isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary;
     final secondary =
         isDark ? AppColors.dTextSecondary : AppColors.lTextSecondary;
     final cardBorder = isDark ? AppColors.dBorder : AppColors.lBorder;
+    final surfaceColor =
+        isDark ? AppColors.dSurface : AppColors.lSurface;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.text('findNextOffer'),
+                      l10n.text('appName'),
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        letterSpacing: -0.4,
+                        color: textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      l10n.text('verifiedBankOffers'),
-                      style: TextStyle(color: secondary, height: 1.4),
+                      l10n.text('findNextOffer'),
+                      style: TextStyle(
+                        color: secondary,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.positive.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                  border: Border.all(
-                    color: AppColors.positive.withValues(alpha: 0.25),
+              const SizedBox(width: 12),
+              Pressable(
+                onTap:
+                    () => TabNavigation.openExplore(
+                      const ExploreRequest(segment: ExploreSegment.nearby),
+                    ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.verified_outlined,
-                      size: 13,
-                      color: AppColors.positive,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'LIVE OFFERS',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.positive,
-                        letterSpacing: 0.5,
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    border: Border.all(color: cardBorder, width: 0.8),
+                    boxShadow:
+                        isDark
+                            ? null
+                            : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.place_outlined,
+                        size: 14,
+                        color: AppColors.brandTeal,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n.text('currentLocation'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          if (totalOffers != null && totalOffers! > 0) ...[
-            const SizedBox(height: 16),
-            BalanceHeader(
-              count: totalOffers!,
-              label: l10n.text('allOffers'),
-              deltaText: l10n.format('bankActiveOffers', {'count': totalOffers!}),
-              isPositive: true,
-            ),
-          ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Semantics(
             button: true,
             label: l10n.text('searchBankOffers'),
             child: Pressable(
               onTap: () => context.push('/search'),
               child: Container(
-                height: 54,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color:
-                      isDark ? AppColors.dSurfaceHigh : AppColors.lSurface,
+                  color: surfaceColor,
                   border: Border.all(color: cardBorder, width: 1.0),
                   borderRadius: BorderRadius.circular(Radii.md),
                   boxShadow:
@@ -414,21 +492,27 @@ class _Header extends StatelessWidget {
                           : [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 8,
+                              blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: secondary),
-                    const SizedBox(width: 12),
+                    Icon(Icons.search, color: secondary, size: 20),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         l10n.text('searchBankOffers'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: secondary, fontSize: 15),
+                        style: TextStyle(
+                          color:
+                              isDark
+                                  ? AppColors.dTextTertiary
+                                  : AppColors.lTextTertiary,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -437,23 +521,13 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed:
-                () => TabNavigation.openExplore(
-                  const ExploreRequest(segment: ExploreSegment.nearby),
-                ),
-            icon: const Icon(Icons.near_me_outlined, size: 18),
-            label: Text(l10n.text('nearbyOffers')),
-          ),
-          const SizedBox(height: 16),
-          // Neobank Quick Action Row
+          // Clean quick actions pill row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _QuickAction(
+                child: _QuickPill(
                   icon: Icons.near_me_outlined,
-                  label: l10n.text('nearby'),
+                  label: l10n.text('nearbyOffers'),
                   isDark: isDark,
                   onTap:
                       () => TabNavigation.openExplore(
@@ -461,28 +535,37 @@ class _Header extends StatelessWidget {
                       ),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
-                child: _QuickAction(
+                child: _QuickPill(
                   icon: Icons.credit_card_outlined,
                   label: l10n.text('myCards'),
                   isDark: isDark,
                   onTap: () => context.push('/preferences'),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
-                child: _QuickAction(
+                child: _QuickPill(
                   icon: Icons.timer_outlined,
                   label: l10n.text('endingSoon'),
                   isDark: isDark,
-                  onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+                  onTap:
+                      () => TabNavigation.openExplore(
+                        const ExploreRequest(),
+                      ),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
-                child: _QuickAction(
+                child: _QuickPill(
                   icon: Icons.explore_outlined,
                   label: l10n.text('allOffers'),
                   isDark: isDark,
-                  onTap: () => TabNavigation.openExplore(const ExploreRequest()),
+                  onTap:
+                      () => TabNavigation.openExplore(
+                        const ExploreRequest(),
+                      ),
                 ),
               ),
             ],
@@ -493,8 +576,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
+class _QuickPill extends StatelessWidget {
+  const _QuickPill({
     required this.icon,
     required this.label,
     required this.isDark,
@@ -508,68 +591,104 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? AppColors.dSurfaceHigh : AppColors.lSurfaceHigh;
+    final bg = isDark ? AppColors.dSurface : AppColors.lSurface;
     final fg = isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary;
     final border = isDark ? AppColors.dBorder : AppColors.lBorder;
 
     return Pressable(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(Radii.pill),
-              border: Border.all(color: border, width: 0.8),
-            ),
-            child: Icon(icon, color: fg, size: 22),
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.25,
-                fontWeight: FontWeight.w600,
-                color: fg,
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(Radii.pill),
+          border: Border.all(color: border, width: 0.8),
+          boxShadow:
+              isDark
+                  ? null
+                  : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.brandTeal, size: 14),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: fg,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+  const _Section({
+    required this.title,
+    required this.child,
+    this.actionText,
+    this.onAction,
+  });
 
   final String title;
   final Widget child;
+  final String? actionText;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              if (actionText != null && onAction != null)
+                TextButton(
+                  onPressed: onAction,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    actionText!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           child,
         ],
       ),
@@ -660,8 +779,8 @@ class BankTile extends StatelessWidget {
                         ? AppColors.dBackground
                         : AppColors.lSurfaceHigh)
                     : (isDark ? AppColors.dSurface : AppColors.lSurface),
-            borderRadius: BorderRadius.circular(Radii.md),
-            border: Border.all(color: border, width: 1.0),
+            borderRadius: BorderRadius.circular(Radii.lg),
+            border: Border.all(color: border, width: 0.8),
             boxShadow:
                 none || isDark
                     ? null
@@ -673,7 +792,7 @@ class BankTile extends StatelessWidget {
                       ),
                     ],
           ),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -686,48 +805,69 @@ class BankTile extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(Radii.sm),
+                      color:
+                          isDark
+                              ? AppColors.brandTeal.withValues(alpha: 0.25)
+                              : AppColors.brandTealSoft,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       bank.short,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
-                        letterSpacing: 0.5,
+                        color:
+                            isDark
+                                ? AppColors.brandTealLight
+                                : AppColors.brandTeal,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
                   if (count != null && count! > 0)
-                    Text(
-                      '$count',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: secondary,
-                        fontFeatures: AppTextStyles.tabularFeatures,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isDark
+                                ? AppColors.dSurfaceHigh
+                                : AppColors.lSurfaceHigh,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: secondary,
+                          fontFeatures: AppTextStyles.tabularFeatures,
+                        ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 bank.localizedName(l10n.locale.languageCode),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                   height: 1.25,
                 ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     color: secondary,
                     fontFeatures: AppTextStyles.tabularFeatures,
                   ),

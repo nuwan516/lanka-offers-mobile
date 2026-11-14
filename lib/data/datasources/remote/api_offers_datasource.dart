@@ -335,8 +335,8 @@ class ApiOffersDataSource {
       applicableCards: cards.toSet().toList(),
       cardEligibility: cardEligibility,
       restrictions: restrictions,
-      minTransaction: _parseMinTransaction(raw),
-      maxTransaction: _parseMaxTransaction(raw),
+      minTransaction: _dbl(j['min_spend']) ?? _parseMinTransaction(raw),
+      maxTransaction: _dbl(j['max_discount']) ?? _parseMaxTransaction(raw),
     );
   }
 
