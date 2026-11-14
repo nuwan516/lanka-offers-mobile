@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/semantics/offer_semantics.dart';
-import '../../../core/services/phase_two_survey_service.dart';
+import '../../../core/services/engagement_survey_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/bank_offer.dart';
@@ -17,6 +18,7 @@ import '../../../domain/repositories/offer_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
 import '../../common/widgets/bank_badge.dart';
 import '../../common/widgets/offer_presentation.dart';
+import '../../common/widgets/offer_image.dart';
 import '../../common/widgets/state_views.dart';
 
 class OfferDetailScreen extends StatefulWidget {
@@ -92,7 +94,7 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
 
   Future<void> _recordView() async {
     try {
-      await getIt<PhaseTwoSurveyService>().recordOfferViewed();
+      await getIt<EngagementSurveyService>().recordOfferViewed();
     } catch (_) {}
   }
 
@@ -287,6 +289,7 @@ class OfferDetailContent extends StatelessWidget {
     ];
 
     return ListView(
+      scrollCacheExtent: const ScrollCacheExtent.pixels(5000),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         Row(
@@ -344,21 +347,11 @@ class OfferDetailContent extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         Text(offer.title, style: TextStyle(color: secondary, height: 1.4)),
-
-        _Section(
-          title: l10n.validUntil,
-          child: Text(
-            validity.text,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: validity.color(isDark),
-            ),
-          ),
-        ),
-
-        _Section(
-          title: l10n.text('detailEligibility'),
-          child: _eligibility(l10n, secondary),
+        const SizedBox(height: 12),
+        OfferImage(
+          imageUrl: offer.featuredImage ?? offer.images.firstOrNull,
+          semanticLabel:
+              '${offer.merchantName.isNotEmpty ? offer.merchantName : offer.title} promotion image',
         ),
 
         if (offer.minTransaction != null ||
@@ -391,6 +384,9 @@ class OfferDetailContent extends StatelessWidget {
             ),
           ),
 
+        // Location is a primary decision field for consumers. Keep the scope
+        // and verified branch names near the offer header so they are built in
+        // the initial viewport; the map remains below the same section.
         _Section(
           title: l10n.text('detailWhereApplies'),
           child: Column(
@@ -416,32 +412,39 @@ class OfferDetailContent extends StatelessWidget {
                   style: TextStyle(color: secondary, height: 1.4),
                 ),
               ],
-              if (pinnable) ...[
-                const SizedBox(height: 12),
-                _OfferLocationMap(
-                  locations: branches,
-                  merchantName: offer.merchantName,
-                ),
-                for (final loc in offer.locations
-                    .where(_validCoordinates)
-                    .take(5))
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    leading: const Icon(Icons.place_outlined),
-                    title: Text(
-                      loc.name.isNotEmpty ? loc.name : offer.merchantName,
-                    ),
-                    subtitle: loc.address.isNotEmpty ? Text(loc.address) : null,
-                    trailing: IconButton(
-                      tooltip: l10n.getDirections,
-                      icon: const Icon(Icons.directions_outlined),
-                      onPressed: () => _openDirections(loc),
-                    ),
+              for (final loc in branches.take(5))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: const Icon(Icons.place_outlined),
+                  title: Text(
+                    loc.name.isNotEmpty ? loc.name : offer.merchantName,
                   ),
-              ],
+                  subtitle: loc.address.isNotEmpty ? Text(loc.address) : null,
+                  trailing: IconButton(
+                    tooltip: l10n.getDirections,
+                    icon: const Icon(Icons.directions_outlined),
+                    onPressed: () => _openDirections(loc),
+                  ),
+                ),
             ],
           ),
+        ),
+
+        _Section(
+          title: l10n.validUntil,
+          child: Text(
+            validity.text,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: validity.color(isDark),
+            ),
+          ),
+        ),
+
+        _Section(
+          title: l10n.text('detailEligibility'),
+          child: _eligibility(l10n, secondary),
         ),
 
         if (terms.isNotEmpty || (offer.terms?.isNotEmpty ?? false))
@@ -456,6 +459,14 @@ class OfferDetailContent extends StatelessWidget {
               ],
             ),
           ),
+
+        if (pinnable) ...[
+          const SizedBox(height: 12),
+          _OfferLocationMap(
+            locations: branches,
+            merchantName: offer.merchantName,
+          ),
+        ],
 
         if (_safeUrl(offer.sourceUrl) != null) ...[
           const SizedBox(height: 24),
@@ -586,11 +597,14 @@ class _Fact extends StatelessWidget {
       children: [
         Expanded(child: Text(label)),
         const SizedBox(width: 12),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontFeatures: AppTextStyles.tabularFeatures,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontFeatures: AppTextStyles.tabularFeatures,
+            ),
           ),
         ),
       ],

@@ -303,6 +303,12 @@ class ApiOffersDataSource {
       }
     }
 
+    final publicImage = _str(j['image_url']);
+    final resolvedImage =
+        publicImage == null
+            ? null
+            : Uri.parse(_base).resolve(publicImage).toString();
+
     return BankOffer(
       uniqueId: _str(j['unique_id']) ?? _str(j['id']) ?? '',
       title: _str(j['title']) ?? 'Untitled',
@@ -312,8 +318,8 @@ class ApiOffersDataSource {
       locations: locations,
       validity: ValidityPeriod(validFrom: validFrom, validUntil: validUntil),
       contact: contact,
-      images: const [],
-      featuredImage: null,
+      images: resolvedImage == null ? const [] : [resolvedImage],
+      featuredImage: resolvedImage,
       quality: QualityScore(
         confidenceScore: rulePassed ? 0.75 : 0.45,
         grade: rulePassed ? 'B' : 'C',

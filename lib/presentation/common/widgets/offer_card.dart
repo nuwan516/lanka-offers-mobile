@@ -12,6 +12,7 @@ import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/repositories/user_repository.dart';
 import 'bank_badge.dart';
 import 'offer_presentation.dart';
+import 'offer_image.dart';
 
 /// One offer in a list styled with friendly, trust-first neobank aesthetics.
 /// Tapping opens the detail pager over [contextOffers].
@@ -132,6 +133,11 @@ class _OfferCardState extends State<OfferCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    OfferImage(
+                      imageUrl: offer.featuredImage ?? offer.images.firstOrNull,
+                      semanticLabel: '$merchant promotion image',
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(

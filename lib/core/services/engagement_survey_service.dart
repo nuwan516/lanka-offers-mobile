@@ -46,13 +46,13 @@ class SurveyState {
   );
 }
 
-class PhaseTwoSurveyService {
-  PhaseTwoSurveyService(this._preferences);
+class EngagementSurveyService {
+  EngagementSurveyService(this._preferences);
 
   final SharedPreferences _preferences;
 
   SurveyState get state {
-    final value = _preferences.getString(StorageKeys.surveyState);
+    final value = _preferences.getString(StorageKeys.engagementSurveyState);
     if (value == null) return const SurveyState();
     try {
       return SurveyState.fromJson(jsonDecode(value) as Map<String, dynamic>);
@@ -98,7 +98,7 @@ class PhaseTwoSurveyService {
   );
 
   Future<void> _write(SurveyState value) => _preferences.setString(
-    StorageKeys.surveyState,
+    StorageKeys.engagementSurveyState,
     jsonEncode(value.toJson()),
   );
 }
