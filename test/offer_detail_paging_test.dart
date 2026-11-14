@@ -35,16 +35,18 @@ BankOffer _createTestOffer({
       validFrom: DateTime(2026, 10, 1),
       validUntil: DateTime(2026, 10, 31),
     ),
-    locations: locations ?? [
-      Location(
-        name: 'Kandy City Centre Branch',
-        address: '5 Sri Dalada Veediya, Kandy',
-        latitude: 7.2906,
-        longitude: 80.6337,
-        district: 'Kandy',
-        city: 'Kandy',
-      ),
-    ],
+    locations:
+        locations ??
+        [
+          Location(
+            name: 'Kandy City Centre Branch',
+            address: '5 Sri Dalada Veediya, Kandy',
+            latitude: 7.2906,
+            longitude: 80.6337,
+            district: 'Kandy',
+            city: 'Kandy',
+          ),
+        ],
     locationScope: scope,
     applicableCards: const ['visa_signature', 'mastercard_world'],
     cardEligibility: const CardEligibility(
@@ -58,15 +60,15 @@ BankOffer _createTestOffer({
 }
 
 Widget _localized(Widget child) => MaterialApp(
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: LanguageService.supportedLocales,
-      home: child,
-    );
+  localizationsDelegates: const [
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: LanguageService.supportedLocales,
+  home: child,
+);
 
 void main() {
   setUp(() async {
@@ -76,68 +78,101 @@ void main() {
   });
 
   group('Phase 8 — Offer Detail Horizontal Paging & Information Hierarchy', () {
-    testWidgets('Renders offer details with full-screen PageView and position indicator', (tester) async {
-      final offer1 = _createTestOffer(id: 'offer_1', title: 'Pizza Fest 20% Off', merchantName: 'Pizza Hut', scope: 'EXPLICIT_BRANCH');
-      final offer2 = _createTestOffer(id: 'offer_2', title: 'Burger Weekend Deal', merchantName: 'Burger King', scope: 'MULTIPLE_BRANCHES');
-      final offer3 = _createTestOffer(id: 'offer_3', title: 'Kottu Feast', merchantName: 'Pilawoos', scope: 'EXPLICIT_BRANCH');
+    testWidgets(
+      'Renders offer details with full-screen PageView and position indicator',
+      (tester) async {
+        final offer1 = _createTestOffer(
+          id: 'offer_1',
+          title: 'Pizza Fest 20% Off',
+          merchantName: 'Pizza Hut',
+          scope: 'EXPLICIT_BRANCH',
+        );
+        final offer2 = _createTestOffer(
+          id: 'offer_2',
+          title: 'Burger Weekend Deal',
+          merchantName: 'Burger King',
+          scope: 'MULTIPLE_BRANCHES',
+        );
+        final offer3 = _createTestOffer(
+          id: 'offer_3',
+          title: 'Kottu Feast',
+          merchantName: 'Pilawoos',
+          scope: 'EXPLICIT_BRANCH',
+        );
 
-      final contextOffers = [offer1, offer2, offer3];
+        final contextOffers = [offer1, offer2, offer3];
 
-      await tester.pumpWidget(
-        _localized(
-          OfferDetailScreen(
-            offerId: 'offer_1',
-            contextOffers: contextOffers,
-            initialIndex: 0,
+        await tester.pumpWidget(
+          _localized(
+            OfferDetailScreen(
+              offerId: 'offer_1',
+              contextOffers: contextOffers,
+              initialIndex: 0,
+            ),
           ),
-        ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Check Offer 1 of 3 indicator
+        expect(find.text('Offer 1 of 3'), findsOneWidget);
+        expect(find.text('Pizza Hut'), findsOneWidget);
+        // Wording comes from the shared semantics layer: a plain discount, not "up to".
+        expect(find.text('20% off'), findsOneWidget);
+        expect(find.text('Pizza Fest 20% Off'), findsOneWidget);
+
+        // The promotion image now occupies the top of the detail body, so the
+        // transaction facts are intentionally below the fold on a phone.
+        await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+        await tester.pump(const Duration(milliseconds: 300));
+
+        // Minimum transaction and maximum transaction value are separate facts
+        // (never merged into one range), formatted with thousands separators.
+        expect(find.text('Minimum transaction'), findsOneWidget);
+        expect(find.text('LKR 5,000'), findsOneWidget);
+        expect(find.text('Maximum transaction value'), findsOneWidget);
+        expect(find.text('LKR 50,000'), findsOneWidget);
+
+        // Verify confirmed branch is shown
+        expect(find.text('Kandy City Centre Branch'), findsOneWidget);
+
+        // Test horizontal swipe to next offer (Offer 2)
+        final pageView = tester.widget<PageView>(
+          find.byKey(const ValueKey('offer_detail_page_view')),
+        );
+        pageView.controller!.jumpToPage(1);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Offer 2 of 3'), findsOneWidget);
+        expect(find.text('Burger King'), findsOneWidget);
+        expect(find.text('Burger Weekend Deal'), findsOneWidget);
+
+        // Test horizontal swipe to next offer (Offer 3)
+        pageView.controller!.jumpToPage(2);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Offer 3 of 3'), findsOneWidget);
+        expect(find.text('Pilawoos'), findsOneWidget);
+
+        // Test horizontal swipe backwards to Offer 2
+        pageView.controller!.jumpToPage(1);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Offer 2 of 3'), findsOneWidget);
+        expect(find.text('Burger King'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Truthful location scope presentation for ONLINE offer', (
+      tester,
+    ) async {
+      final onlineOffer = _createTestOffer(
+        id: 'online_1',
+        title: 'Uber Eats 15% Off',
+        merchantName: 'Uber Eats',
+        scope: 'ONLINE',
+        locations: [],
       );
-
-      await tester.pumpAndSettle();
-
-      // Check Offer 1 of 3 indicator
-      expect(find.text('Offer 1 of 3'), findsOneWidget);
-      expect(find.text('Pizza Hut'), findsOneWidget);
-      // Wording comes from the shared semantics layer: a plain discount, not "up to".
-      expect(find.text('20% off'), findsOneWidget);
-      expect(find.text('Pizza Fest 20% Off'), findsOneWidget);
-
-      // Minimum transaction and maximum transaction value are separate facts
-      // (never merged into one range), formatted with thousands separators.
-      expect(find.text('Minimum transaction'), findsOneWidget);
-      expect(find.text('LKR 5,000'), findsOneWidget);
-      expect(find.text('Maximum transaction value'), findsOneWidget);
-      expect(find.text('LKR 50,000'), findsOneWidget);
-
-      // Verify confirmed branch is shown
-      expect(find.text('Kandy City Centre Branch'), findsOneWidget);
-
-      // Test horizontal swipe to next offer (Offer 2)
-      final pageView = tester.widget<PageView>(find.byKey(const ValueKey('offer_detail_page_view')));
-      pageView.controller!.jumpToPage(1);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Offer 2 of 3'), findsOneWidget);
-      expect(find.text('Burger King'), findsOneWidget);
-      expect(find.text('Burger Weekend Deal'), findsOneWidget);
-
-      // Test horizontal swipe to next offer (Offer 3)
-      pageView.controller!.jumpToPage(2);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Offer 3 of 3'), findsOneWidget);
-      expect(find.text('Pilawoos'), findsOneWidget);
-
-      // Test horizontal swipe backwards to Offer 2
-      pageView.controller!.jumpToPage(1);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Offer 2 of 3'), findsOneWidget);
-      expect(find.text('Burger King'), findsOneWidget);
-    });
-
-    testWidgets('Truthful location scope presentation for ONLINE offer', (tester) async {
-      final onlineOffer = _createTestOffer(id: 'online_1', title: 'Uber Eats 15% Off', merchantName: 'Uber Eats', scope: 'ONLINE', locations: []);
 
       await tester.pumpWidget(
         _localized(
@@ -151,12 +186,22 @@ void main() {
       await tester.pumpAndSettle();
 
       // States only what the source scope says; no claim about channels.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Available online'), findsOneWidget);
       expect(find.textContaining('mobile app'), findsNothing);
     });
 
-    testWidgets('Truthful location scope presentation for NATIONWIDE offer', (tester) async {
-      final nationwideOffer = _createTestOffer(id: 'nationwide_1', title: 'Keells Supermarket 20% Off', merchantName: 'Keells', scope: 'NATIONWIDE', locations: []);
+    testWidgets('Truthful location scope presentation for NATIONWIDE offer', (
+      tester,
+    ) async {
+      final nationwideOffer = _createTestOffer(
+        id: 'nationwide_1',
+        title: 'Keells Supermarket 20% Off',
+        merchantName: 'Keells',
+        scope: 'NATIONWIDE',
+        locations: [],
+      );
 
       await tester.pumpWidget(
         _localized(
@@ -170,6 +215,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Island-wide scope does not claim every outlet participates.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Available island-wide'), findsOneWidget);
       expect(find.textContaining('all merchant outlets'), findsNothing);
     });

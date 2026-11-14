@@ -6,7 +6,7 @@ import '../../../core/constants/banks.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/semantics/offer_semantics.dart';
-import '../../../core/services/phase_two_survey_service.dart';
+import '../../../core/services/engagement_survey_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -51,7 +51,7 @@ class _HomeViewState extends State<_HomeView> {
   Future<void> _prepareLocalExperience() async {
     final preferences = await getIt<UserRepository>().getPreferences();
     final saved = await getIt<UserRepository>().getSavedOffers();
-    final survey = getIt<PhaseTwoSurveyService>();
+    final survey = getIt<EngagementSurveyService>();
     await survey.recordAppOpen(DateTime.now());
     if (!mounted) return;
     setState(
@@ -68,7 +68,7 @@ class _HomeViewState extends State<_HomeView> {
 
   Future<void> _showSurvey() async {
     String? response;
-    final service = getIt<PhaseTwoSurveyService>();
+    final service = getIt<EngagementSurveyService>();
     final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet<void>(
       context: context,

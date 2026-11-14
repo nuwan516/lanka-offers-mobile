@@ -14,6 +14,7 @@ Map<String, dynamic> _item({
   Object? discount = '50',
   String? validTo = '2026-12-31T00:00:00.000Z',
   String scope = 'EXPLICIT_BRANCH',
+  String? imageUrl,
 }) => {
   'id': id,
   'unique_id': uniqueId,
@@ -41,6 +42,7 @@ Map<String, dynamic> _item({
     {'name': 'No coordinates', 'city': 'Kandy'},
   ],
   'db_status': 'PUBLISHED',
+  'image_url': imageUrl,
 };
 
 http.Client _client(Map<String, Object> Function(Uri uri) handler) =>
@@ -79,6 +81,34 @@ void main() {
         expect(o.sourceUrl, 'https://example-bank.lk/offers/uh');
         expect(o.cardEligibility!.cardTypes, ['Credit Card']);
         expect(o.cardEligibility!.networks, ['Visa']);
+      },
+    );
+
+    test(
+      'resolves the approved public image URL into consumer image fields',
+      () async {
+        final offers = await http.runWithClient(
+          () => ds.fetchOffers(),
+          () => _client(
+            (_) => {
+              'body': {
+                'items': [
+                  _item(
+                    imageUrl:
+                        '/api/images/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
+                  ),
+                ],
+                'total': 1,
+              },
+            },
+          ),
+        );
+
+        expect(
+          offers.single.featuredImage,
+          'https://api.lanka-offers.me/api/images/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
+        );
+        expect(offers.single.images, [offers.single.featuredImage]);
       },
     );
 
