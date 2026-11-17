@@ -28,11 +28,13 @@ class ProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(Radii.lg),
             ),
             title: Text(title),
-            content: const Text('This action cannot be undone.'),
+            content: Text(
+              AppLocalizations.of(context)!.text('actionCannotUndo'),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(
@@ -40,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Clear'),
+                child: Text(AppLocalizations.of(context)!.text('clearAction')),
               ),
             ],
           ),
@@ -90,16 +92,16 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '100% Privacy & Local Storage',
-                        style: TextStyle(
+                      Text(
+                        l10n.text('privacyTitle'),
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Preferences and bookmarks stay on your phone. No tracking.',
+                        l10n.text('privacyBody'),
                         style: TextStyle(
                           fontSize: 12,
                           color:
@@ -129,13 +131,13 @@ class ProfileScreen extends StatelessWidget {
               _SettingTile(
                 icon: Icons.category_outlined,
                 title: l10n.text('preferredCategories'),
-                subtitle: 'Coming in a future API update',
+                subtitle: l10n.text('comingLater'),
               ),
               _Divider(isDark: isDark),
               _SettingTile(
                 icon: Icons.location_city_outlined,
                 title: l10n.text('preferredDistricts'),
-                subtitle: 'Coming in a future API update',
+                subtitle: l10n.text('comingLater'),
               ),
               _Divider(isDark: isDark),
               _SettingTile(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di/injection.dart';
@@ -70,6 +71,7 @@ class _ExploreHubState extends State<_ExploreHub> {
 
   void _select(ExploreSegment segment) {
     if (segment == _segment) return;
+    HapticFeedback.selectionClick();
     setState(() => _segment = segment);
     if (segment == ExploreSegment.nearby &&
         context.read<NearbyCubit>().state.status == NearbyStatus.idle) {

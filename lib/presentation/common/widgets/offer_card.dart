@@ -5,17 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/semantics/offer_semantics.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../../domain/entities/bank_offer.dart';
 import '../../../domain/repositories/user_repository.dart';
 import 'bank_badge.dart';
-import 'offer_presentation.dart';
 import 'offer_image.dart';
+import 'offer_presentation.dart';
 
-/// One offer in a list styled with friendly, trust-first neobank aesthetics.
-/// Tapping opens the detail pager over [contextOffers].
+/// One offer in a list. Tapping opens the detail pager over [contextOffers].
 class OfferCard extends StatefulWidget {
   const OfferCard({
     super.key,
@@ -75,18 +75,16 @@ class _OfferCardState extends State<OfferCard> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final palette = context.palette;
     final offer = widget.offer;
-    final secondary =
-        isDark ? AppColors.dTextSecondary : AppColors.lTextSecondary;
-    final cardBorder = isDark ? AppColors.dBorder : AppColors.lBorder;
-
     final benefit = OfferPresentation.benefit(l10n, offer);
     final validity = OfferPresentation.validity(l10n, offer.validity);
     final expired = OfferSemantics.isExpired(offer.validity);
     final location = offerLocationLabel(l10n, offer);
     final merchant =
         offer.merchantName.isNotEmpty ? offer.merchantName : offer.title;
+    final imageUrl = offer.featuredImage ?? offer.images.firstOrNull;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final pad = widget.compact ? 12.0 : 16.0;
 
     final cardTypes =
@@ -95,168 +93,162 @@ class _OfferCardState extends State<OfferCard> {
           return l.contains('credit') || l.contains('debit');
         }).toList();
 
-    return Semantics(
-      button: true,
-      label: [
-        merchant,
-        offer.title,
-        if (benefit != null) benefit,
-        validity.text,
-      ].join(', '),
-      child: Opacity(
-        opacity: expired ? 0.7 : 1,
-        child: Container(
-          margin: EdgeInsets.only(bottom: widget.compact ? 8 : 12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.dSurface : AppColors.lSurface,
-            borderRadius: BorderRadius.circular(Radii.lg),
-            border: Border.all(color: cardBorder, width: 1.0),
-            boxShadow:
-                isDark
-                    ? null
-                    : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(Radii.lg),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(Radii.lg),
-              onTap: _open,
-              child: Padding(
-                padding: EdgeInsets.all(pad),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+    return Padding(
+      padding: EdgeInsets.only(bottom: widget.compact ? 8 : 12),
+      child: Semantics(
+        button: true,
+        label: [
+          merchant,
+          offer.title,
+          if (benefit != null) benefit,
+          validity.text,
+        ].join(', '),
+        child: Opacity(
+          opacity: expired ? 0.72 : 1,
+          child: Pressable(
+            onTap: _open,
+            haptic: false,
+            child: Material(
+              color: palette.card,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(Radii.lg),
+                side: BorderSide(color: palette.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasImage)
                     OfferImage(
-                      imageUrl: offer.featuredImage ?? offer.images.firstOrNull,
+                      imageUrl: imageUrl,
                       semanticLabel: '$merchant promotion image',
                     ),
-                    const SizedBox(height: 12),
-                    Row(
+                  Padding(
+                    padding: EdgeInsets.all(pad),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child:
-                              offer.bankName.isNotEmpty
-                                  ? BankBadge(
-                                    bankName: offer.bankCode ?? offer.bankName,
-                                  )
-                                  : const SizedBox.shrink(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child:
+                                  offer.bankName.isNotEmpty
+                                      ? BankBadge(
+                                        bankName:
+                                            offer.bankCode ?? offer.bankName,
+                                      )
+                                      : const SizedBox.shrink(),
+                            ),
+                            IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              tooltip:
+                                  _saved ? l10n.offerUnsaved : l10n.saveOffer,
+                              onPressed: _toggleSaved,
+                              icon: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 180),
+                                child: Icon(
+                                  _saved
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  key: ValueKey(_saved),
+                                  color:
+                                      _saved ? palette.negative : palette.muted,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
+                        Text(
+                          merchant,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          tooltip: _saved ? l10n.offerUnsaved : l10n.saveOffer,
-                          onPressed: _toggleSaved,
-                          icon: Icon(
-                            _saved ? Icons.favorite : Icons.favorite_border,
-                            size: 20,
-                            color: _saved ? AppColors.negative : secondary,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          offer.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: palette.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                        if (benefit != null) ...[
+                          const SizedBox(height: 10),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: palette.benefitBg,
+                              borderRadius: BorderRadius.circular(Radii.md),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                benefit,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: palette.benefitFg,
+                                  fontWeight: FontWeight.w800,
+                                  fontFeatures: AppTextStyles.tabularFeatures,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (offer.distanceKm != null &&
+                                OfferSemantics.hasConfirmedBranch(offer))
+                              _meta(
+                                Icons.near_me_outlined,
+                                _distance(offer.distanceKm!),
+                                palette.muted,
+                                bold: true,
+                              )
+                            else if (location != null)
+                              _meta(
+                                offer.locationScope == 'ONLINE'
+                                    ? Icons.language
+                                    : Icons.place_outlined,
+                                location,
+                                palette.muted,
+                              ),
+                            if (cardTypes.isNotEmpty)
+                              _meta(
+                                Icons.credit_card_outlined,
+                                cardTypes.join(' · '),
+                                palette.muted,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          validity.text,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight:
+                                validity.tone == ValidityTone.neutral
+                                    ? FontWeight.w500
+                                    : FontWeight.w700,
+                            color: validity.color(
+                              theme.brightness == Brightness.dark,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      merchant,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      offer.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.35,
-                        color: secondary,
-                      ),
-                    ),
-                    if (benefit != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isDark
-                                  ? AppColors.brandTeal.withValues(alpha: 0.25)
-                                  : AppColors.brandTealSoft,
-                          borderRadius: BorderRadius.circular(Radii.pill),
-                        ),
-                        child: Text(
-                          benefit,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color:
-                                isDark
-                                    ? AppColors.brandTealLight
-                                    : AppColors.brandTeal,
-                            fontFeatures: AppTextStyles.tabularFeatures,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (offer.distanceKm != null &&
-                            OfferSemantics.hasConfirmedBranch(offer))
-                          _meta(
-                            Icons.near_me_outlined,
-                            _distance(offer.distanceKm!),
-                            secondary,
-                            bold: true,
-                          )
-                        else if (location != null)
-                          _meta(
-                            offer.locationScope == 'ONLINE'
-                                ? Icons.language
-                                : Icons.place_outlined,
-                            location,
-                            secondary,
-                          ),
-                        if (cardTypes.isNotEmpty)
-                          _meta(
-                            Icons.credit_card_outlined,
-                            cardTypes.join(' · '),
-                            secondary,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      validity.text,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight:
-                            validity.tone == ValidityTone.neutral
-                                ? FontWeight.w400
-                                : FontWeight.w600,
-                        color: validity.color(isDark),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -269,17 +261,16 @@ class _OfferCardState extends State<OfferCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
+        Icon(icon, size: 16, color: color),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
             text,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12.5,
               color: color,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ),

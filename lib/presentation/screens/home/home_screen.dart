@@ -275,7 +275,7 @@ class _HomeViewState extends State<_HomeView> {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 38,
+                  height: 56,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -369,11 +369,7 @@ class _HomeViewState extends State<_HomeView> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.isDark,
-    required this.l10n,
-    this.totalOffers,
-  });
+  const _Header({required this.isDark, required this.l10n, this.totalOffers});
 
   final bool isDark;
   final AppLocalizations l10n;
@@ -387,8 +383,7 @@ class _Header extends StatelessWidget {
     final secondary =
         isDark ? AppColors.dTextSecondary : AppColors.lTextSecondary;
     final cardBorder = isDark ? AppColors.dBorder : AppColors.lBorder;
-    final surfaceColor =
-        isDark ? AppColors.dSurface : AppColors.lSurface;
+    final surfaceColor = isDark ? AppColors.dSurface : AppColors.lSurface;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -521,54 +516,37 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Clean quick actions pill row
-          Row(
-            children: [
-              Expanded(
-                child: _QuickPill(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _QuickAction(
                   icon: Icons.near_me_outlined,
                   label: l10n.text('nearbyOffers'),
-                  isDark: isDark,
                   onTap:
                       () => TabNavigation.openExplore(
                         const ExploreRequest(segment: ExploreSegment.nearby),
                       ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _QuickPill(
+                _QuickAction(
                   icon: Icons.credit_card_outlined,
                   label: l10n.text('myCards'),
-                  isDark: isDark,
                   onTap: () => context.push('/preferences'),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _QuickPill(
+                _QuickAction(
                   icon: Icons.timer_outlined,
                   label: l10n.text('endingSoon'),
-                  isDark: isDark,
                   onTap:
-                      () => TabNavigation.openExplore(
-                        const ExploreRequest(),
-                      ),
+                      () => TabNavigation.openExplore(const ExploreRequest()),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _QuickPill(
+                _QuickAction(
                   icon: Icons.explore_outlined,
                   label: l10n.text('allOffers'),
-                  isDark: isDark,
                   onTap:
-                      () => TabNavigation.openExplore(
-                        const ExploreRequest(),
-                      ),
+                      () => TabNavigation.openExplore(const ExploreRequest()),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -576,63 +554,58 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _QuickPill extends StatelessWidget {
-  const _QuickPill({
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
     required this.icon,
     required this.label,
-    required this.isDark,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final bg = isDark ? AppColors.dSurface : AppColors.lSurface;
-    final fg = isDark ? AppColors.dTextPrimary : AppColors.lTextPrimary;
     final border = isDark ? AppColors.dBorder : AppColors.lBorder;
 
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(Radii.pill),
-          border: Border.all(color: border, width: 0.8),
-          boxShadow:
-              isDark
-                  ? null
-                  : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: Pressable(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(Radii.pill),
+              border: Border.all(color: border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    color:
+                        isDark ? AppColors.brandTealLight : AppColors.brandTeal,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.brandTeal, size: 14),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -775,9 +748,7 @@ class BankTile extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 none
-                    ? (isDark
-                        ? AppColors.dBackground
-                        : AppColors.lSurfaceHigh)
+                    ? (isDark ? AppColors.dBackground : AppColors.lSurfaceHigh)
                     : (isDark ? AppColors.dSurface : AppColors.lSurface),
             borderRadius: BorderRadius.circular(Radii.lg),
             border: Border.all(color: border, width: 0.8),

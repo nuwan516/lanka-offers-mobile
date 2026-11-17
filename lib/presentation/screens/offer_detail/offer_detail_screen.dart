@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,6 +20,7 @@ import '../../../domain/repositories/user_repository.dart';
 import '../../common/widgets/bank_badge.dart';
 import '../../common/widgets/offer_presentation.dart';
 import '../../common/widgets/offer_image.dart';
+import '../../common/widgets/skeletons.dart';
 import '../../common/widgets/state_views.dart';
 
 class OfferDetailScreen extends StatefulWidget {
@@ -152,6 +154,7 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
   }
 
   Future<void> _toggleSaved(BankOffer offer) async {
+    HapticFeedback.selectionClick();
     final repo = getIt<UserRepository>();
     if (_savedOfferIds.contains(offer.uniqueId)) {
       await repo.unsaveOffer(offer.uniqueId);
@@ -169,7 +172,7 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
     if (_isLoadingSingle) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.offerDetails)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const SkeletonBody(),
       );
     }
 
@@ -332,17 +335,37 @@ class OfferDetailContent extends StatelessWidget {
         ],
         if (benefit != null) ...[
           const SizedBox(height: 16),
-          Text(
-            benefit,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.primaryLight : AppColors.primary,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color:
+                  isDark
+                      ? AppColors.brandTeal.withValues(alpha: 0.22)
+                      : AppColors.brandTealSoft,
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.text('detailDiscountNote'),
-            style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    benefit,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color:
+                          isDark
+                              ? AppColors.brandTealLight
+                              : AppColors.brandTeal,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.text('detailDiscountNote'),
+                    style: TextStyle(color: secondary, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
         const SizedBox(height: 12),

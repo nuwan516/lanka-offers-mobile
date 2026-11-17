@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_localizations.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_palette.dart';
 
-/// Quiet, centred message used for empty and failed states.
+/// Centred message for empty and failed states, with a 48dp action when set.
 class StateMessage extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -22,9 +22,8 @@ class StateMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondary =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final theme = Theme.of(context);
+    final palette = context.palette;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
@@ -33,26 +32,44 @@ class StateMessage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 36, color: secondary),
-              const SizedBox(height: 12),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: palette.benefitBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Icon(icon, size: 32, color: palette.benefitFg),
+                ),
+              ),
+              const SizedBox(height: 16),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               if (hint != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   hint!,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: secondary, height: 1.4),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: palette.muted,
+                    height: 1.4,
+                  ),
                 ),
               ],
               if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
-                OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+                const SizedBox(height: 20),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                  ),
+                  onPressed: onAction,
+                  child: Text(actionLabel!),
+                ),
               ],
             ],
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'app_palette.dart';
 import 'app_spacing.dart';
 import 'app_text_styles.dart';
 
@@ -38,18 +39,56 @@ abstract final class AppTheme {
     required Color text,
     required Color textSecondary,
   }) {
-    final scheme = ColorScheme(
+    final seeded = ColorScheme.fromSeed(
+      seedColor: AppColors.brandTeal,
       brightness: brightness,
-      primary: brightness == Brightness.dark ? AppColors.brandTealLight : AppColors.brandTeal,
-      onPrimary: Colors.white,
+    );
+    final primary =
+        brightness == Brightness.dark
+            ? AppColors.brandTealLight
+            : AppColors.brandTeal;
+    final onPrimary =
+        brightness == Brightness.dark ? AppColors.brandTealDark : Colors.white;
+    final scheme = seeded.copyWith(
+      primary: primary,
+      onPrimary: onPrimary,
+      primaryContainer:
+          brightness == Brightness.dark
+              ? const Color(0xFF163E3C)
+              : AppColors.brandTealSoft,
+      onPrimaryContainer:
+          brightness == Brightness.dark
+              ? const Color(0xFFD7F3F0)
+              : AppColors.brandTealDark,
       secondary: AppColors.secondary,
       onSecondary: Colors.white,
+      secondaryContainer:
+          brightness == Brightness.dark
+              ? const Color(0xFF163E3C)
+              : AppColors.brandTealSoft,
+      onSecondaryContainer:
+          brightness == Brightness.dark
+              ? const Color(0xFFD7F3F0)
+              : AppColors.brandTealDark,
       error: AppColors.negative,
       onError: Colors.white,
       surface: surface,
       onSurface: text,
-      surfaceContainerHighest: surfaceHigh,
+      onSurfaceVariant: textSecondary,
+      surfaceContainerLowest: brightness == Brightness.dark ? bg : surface,
+      surfaceContainerLow:
+          brightness == Brightness.dark ? const Color(0xFF121216) : bg,
+      surfaceContainer: surfaceHigh,
+      surfaceContainerHigh:
+          brightness == Brightness.dark
+              ? const Color(0xFF26262E)
+              : const Color(0xFFE8E6E1),
+      surfaceContainerHighest:
+          brightness == Brightness.dark
+              ? const Color(0xFF31313A)
+              : const Color(0xFFDEDCD6),
       outline: border,
+      outlineVariant: border,
     );
 
     final base =
@@ -119,8 +158,12 @@ abstract final class AppTheme {
       ).copyWith(fontFamilyFallback: AppTextStyles.fontFallback),
     );
 
+    final palette =
+        brightness == Brightness.dark ? AppPalette.dark : AppPalette.light;
+
     return base.copyWith(
       colorScheme: scheme,
+      extensions: [palette],
       scaffoldBackgroundColor: bg,
       textTheme: textTheme,
       splashFactory: NoSplash.splashFactory,
@@ -210,7 +253,9 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         height: 68,
-        indicatorColor: AppColors.accent.withValues(alpha: 0.15),
+        indicatorColor: primary.withValues(
+          alpha: brightness == Brightness.dark ? 0.28 : 0.14,
+        ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 12,
@@ -232,6 +277,27 @@ abstract final class AppTheme {
                     : textSecondary,
             size: 24,
           ),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          visualDensity: VisualDensity.standard,
+          tapTargetSize: MaterialTapTargetSize.padded,
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return primary;
+            return surface;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return onPrimary;
+            return text;
+          }),
+          side: WidgetStateProperty.all(BorderSide(color: border)),
         ),
       ),
       chipTheme: ChipThemeData(

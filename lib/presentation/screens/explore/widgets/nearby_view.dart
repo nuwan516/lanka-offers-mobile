@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
@@ -54,7 +55,10 @@ class _NearbyViewState extends State<NearbyView> {
                         onPressed:
                             state.status == NearbyStatus.locating
                                 ? null
-                                : cubit.useDeviceLocation,
+                                : () {
+                                  HapticFeedback.selectionClick();
+                                  cubit.useDeviceLocation();
+                                },
                         icon: const Icon(Icons.my_location, size: 18),
                         label: Text(l10n.text('nearbyUseMyLocation')),
                       ),
@@ -64,10 +68,10 @@ class _NearbyViewState extends State<NearbyView> {
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: 44,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
                       children: [
                         for (final city in presetCities)
                           Padding(
@@ -77,7 +81,10 @@ class _NearbyViewState extends State<NearbyView> {
                               selected:
                                   !state.place.isDevice &&
                                   state.place.name == city.name,
-                              onSelected: (_) => cubit.selectCity(city),
+                              onSelected: (_) {
+                                HapticFeedback.selectionClick();
+                                cubit.selectCity(city);
+                              },
                             ),
                           ),
                       ],
@@ -85,56 +92,53 @@ class _NearbyViewState extends State<NearbyView> {
                   ),
                   if (state.issue != LocationIssue.none)
                     _IssueNotice(issue: state.issue),
-                  Row(
-                    children: [
-                      Text(
-                        l10n.text('nearbyRadius'),
-                        style: TextStyle(color: secondary, fontSize: 12.5),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SizedBox(
-                          height: 40,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              for (final r in _radii)
-                                Padding(
-                                  padding: const EdgeInsetsDirectional.only(
-                                    end: 8,
-                                  ),
-                                  child: ChoiceChip(
-                                    label: Text('${r.round()} km'),
-                                    selected: state.radiusKm == r,
-                                    onSelected: (_) => cubit.setRadius(r),
-                                  ),
-                                ),
-                            ],
+                  Text(
+                    l10n.text('nearbyRadius'),
+                    style: TextStyle(color: secondary),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final r in _radii)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 8),
+                            child: ChoiceChip(
+                              label: Text('${r.round()} km'),
+                              selected: state.radiusKm == r,
+                              onSelected: (_) {
+                                HapticFeedback.selectionClick();
+                                cubit.setRadius(r);
+                              },
+                            ),
                           ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: SegmentedButton<bool>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          icon: const Icon(Icons.view_list_rounded, size: 18),
+                          label: Text(l10n.text('viewList')),
                         ),
-                      ),
-                      SegmentedButton<bool>(
-                        showSelectedIcon: false,
-                        style: const ButtonStyle(
-                          visualDensity: VisualDensity.compact,
+                        ButtonSegment(
+                          value: true,
+                          icon: const Icon(Icons.map_outlined, size: 18),
+                          label: Text(l10n.text('viewMap')),
                         ),
-                        segments: [
-                          ButtonSegment(
-                            value: false,
-                            icon: const Icon(Icons.list, size: 18),
-                            tooltip: l10n.text('viewList'),
-                          ),
-                          ButtonSegment(
-                            value: true,
-                            icon: const Icon(Icons.map_outlined, size: 18),
-                            tooltip: l10n.text('viewMap'),
-                          ),
-                        ],
-                        selected: {_showMap},
-                        onSelectionChanged:
-                            (s) => setState(() => _showMap = s.first),
-                      ),
-                    ],
+                      ],
+                      selected: {_showMap},
+                      onSelectionChanged: (s) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _showMap = s.first);
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -174,37 +178,41 @@ class _NearbyViewState extends State<NearbyView> {
             offers: state.offers.where(OfferSemantics.canShowOnMap).toList(),
           );
         }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                l10n.format('nearbyFound', {
-                  'count': state.offers.length,
-                  'radius': state.radiusKm.round(),
-                  'place': place,
-                }),
-                style: TextStyle(color: secondary),
+        return RefreshIndicator(
+          onRefresh: () => context.read<NearbyCubit>().refresh(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  l10n.format('nearbyFound', {
+                    'count': state.offers.length,
+                    'radius': state.radiusKm.round(),
+                    'place': place,
+                  }),
+                  style: TextStyle(color: secondary),
+                ),
               ),
-            ),
-            for (var i = 0; i < state.offers.length; i++)
-              OfferCard(
-                offer: state.offers[i],
-                contextOffers: state.offers,
-                initialIndex: i,
+              for (var i = 0; i < state.offers.length; i++)
+                OfferCard(
+                  offer: state.offers[i],
+                  contextOffers: state.offers,
+                  initialIndex: i,
+                ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.text('nearbyNote'),
+                style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
               ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.text('nearbyNote'),
-              style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.text('nearbyPrivacy'),
-              style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                l10n.text('nearbyPrivacy'),
+                style: TextStyle(color: secondary, fontSize: 12.5, height: 1.4),
+              ),
+            ],
+          ),
         );
     }
   }
