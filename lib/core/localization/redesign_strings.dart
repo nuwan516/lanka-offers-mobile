@@ -71,6 +71,41 @@ const Map<String, Map<String, String>> redesignStrings = {
     'locationAreaOnly': 'Area only: {area}',
     'detailAreaOnly':
         'The bank gave only an area, not a branch address, so no map pin is shown.',
+    'searchIdleTitle': 'Find a card offer',
+    'searchIdleHint': 'Search by bank, shop, or what you want to buy.',
+    'filterSheetHint': 'Narrow this list. Filters stay on this phone.',
+    'filterAny': 'Any',
+    'actionCannotUndo': 'This cannot be undone.',
+    'clearAction': 'Clear',
+    'privacyTitle': 'Private by design',
+    'privacyBody':
+        'Preferences and saved offers stay on this phone. No account and no tracking.',
+    'comingLater': 'Coming in a future update',
+    'splashTagline': 'Bank card offers across Sri Lanka',
+    'onboardSkip': 'Skip',
+    'onboardGetStarted': 'Get started',
+    'onboardContinue': 'Continue',
+    'onboardAllowLocation': 'Allow location',
+    'onboardWithoutLocation': 'Continue without location',
+    'onboardTitleOffers': 'Bank card offers, in one place',
+    'onboardBodyOffers':
+        'Discover dining, shopping, travel and everyday offers for Sri Lankan bank cards.',
+    'onboardTitleCards': 'Choose your banks and cards',
+    'onboardBodyCards':
+        'Pick the banks and card types you use. Your choices stay on this phone.',
+    'onboardTitleNearby': 'Find offers near you',
+    'onboardBodyNearby':
+        'Allow location to see confirmed branches around you, or continue without sharing it.',
+    'cardFilterTitle': 'Your cards',
+    'localOnly': 'On this phone',
+    'prefsPrivacyNote':
+        'Saved on this phone only. No card numbers or personal details are stored.',
+    'cardMatchPreview': 'What this matches',
+    'cardMatchBody': 'Offers from {banks} for {types}{networks}.',
+    'cardMatchAnyType': 'any card type',
+    'cardMatchNetworks': ' on {networks}',
+    'loadingLabel': 'Loading offers',
+    'removeSaved': 'Remove from saved',
   },
   'si': {
     'discountUpTo': 'උපරිම {value} වට්ටමක්',
@@ -141,6 +176,41 @@ const Map<String, Map<String, String>> redesignStrings = {
     'locationAreaOnly': 'ප්‍රදේශය පමණි: {area}',
     'detailAreaOnly':
         'බැංකුව ලබා දී ඇත්තේ ප්‍රදේශයක් පමණි, ශාඛා ලිපිනයක් නොවේ; එබැවින් සිතියම් සලකුණක් නොපෙන්වයි.',
+    'searchIdleTitle': 'කාඩ් දීමනාවක් සොයන්න',
+    'searchIdleHint': 'බැංකුව, වෙළඳසැල හෝ ඔබට අවශ්‍ය දෙය සොයන්න.',
+    'filterSheetHint': 'මෙම ලැයිස්තුව පටු කරන්න. පෙරහන් මෙම දුරකථනයේ පවතී.',
+    'filterAny': 'ඕනෑම',
+    'actionCannotUndo': 'මෙය අහෝසි කළ නොහැක.',
+    'clearAction': 'මකන්න',
+    'privacyTitle': 'පෞද්ගලිකත්වය මුලින්',
+    'privacyBody':
+        'මනාප සහ සුරැකි දීමනා මෙම දුරකථනයේ පමණි. ගිණුමක් නැත, ලුහුබැඳීමක් නැත.',
+    'comingLater': 'ඉදිරි යාවත්කාලීනයකදී',
+    'splashTagline': 'ශ්‍රී ලංකාවේ බැංකු කාඩ් දීමනා',
+    'onboardSkip': 'මඟ හරින්න',
+    'onboardGetStarted': 'ආරම්භ කරන්න',
+    'onboardContinue': 'ඉදිරියට',
+    'onboardAllowLocation': 'ස්ථානයට අවසර දෙන්න',
+    'onboardWithoutLocation': 'ස්ථානය නොමැතිව ඉදිරියට',
+    'onboardTitleOffers': 'බැංකු කාඩ් දීමනා එක තැනක',
+    'onboardBodyOffers':
+        'ශ්‍රී ලංකා බැංකු කාඩ් සඳහා ආහාර, සාප්පු, ගමන් සහ දෛනික දීමනා සොයන්න.',
+    'onboardTitleCards': 'ඔබේ බැංකු සහ කාඩ් තෝරන්න',
+    'onboardBodyCards':
+        'ඔබ භාවිත කරන බැංකු සහ කාඩ් වර්ග තෝරන්න. තේරීම් මෙම දුරකථනයේ පවතී.',
+    'onboardTitleNearby': 'අසල දීමනා සොයන්න',
+    'onboardBodyNearby':
+        'අවට තහවුරු ශාඛා බැලීමට ස්ථානයට අවසර දෙන්න, නැතහොත් බෙදා නොගෙන ඉදිරියට යන්න.',
+    'cardFilterTitle': 'ඔබේ කාඩ්',
+    'localOnly': 'මෙම දුරකථනයේ',
+    'prefsPrivacyNote':
+        'මෙම දුරකථනයේ පමණක් සුරකියි. කාඩ් අංක හෝ පුද්ගලික තොරතුරු එකතු නොකරයි.',
+    'cardMatchPreview': 'ගැලපෙන දේ',
+    'cardMatchBody': '{banks} වෙතින්, {types}{networks} සඳහා දීමනා.',
+    'cardMatchAnyType': 'ඕනෑම කාඩ් වර්ගයක්',
+    'cardMatchNetworks': ' ({networks} මත)',
+    'loadingLabel': 'දීමනා පූරණය වෙමින්',
+    'removeSaved': 'සුරැකි ලැයිස්තුවෙන් ඉවත් කරන්න',
   },
   'ta': {
     'discountUpTo': '{value} வரை தள்ளுபடி',
@@ -213,5 +283,42 @@ const Map<String, Map<String, String>> redesignStrings = {
     'locationAreaOnly': 'பகுதி மட்டும்: {area}',
     'detailAreaOnly':
         'வங்கி பகுதியை மட்டுமே குறிப்பிட்டது, கிளை முகவரியை அல்ல; எனவே வரைபடக் குறி காட்டப்படவில்லை.',
+    'searchIdleTitle': 'அட்டைச் சலுகையைக் கண்டறியுங்கள்',
+    'searchIdleHint':
+        'வங்கி, கடை அல்லது நீங்கள் வாங்க விரும்புவதைத் தேடுங்கள்.',
+    'filterSheetHint':
+        'இந்தப் பட்டியலைக் குறுக்குங்கள். வடிகட்டிகள் இந்தத் தொலைபேசியில் இருக்கும்.',
+    'filterAny': 'ஏதேனும்',
+    'actionCannotUndo': 'இதைச் செயல்தவிர்க்க முடியாது.',
+    'clearAction': 'அழி',
+    'privacyTitle': 'தனியுரிமை முதலில்',
+    'privacyBody':
+        'விருப்பங்களும் சேமித்த சலுகைகளும் இந்தத் தொலைபேசியில் மட்டுமே. கணக்கு இல்லை, கண்காணிப்பு இல்லை.',
+    'comingLater': 'அடுத்த புதுப்பிப்பில்',
+    'splashTagline': 'இலங்கை முழுவதும் வங்கி அட்டைச் சலுகைகள்',
+    'onboardSkip': 'தவிர்',
+    'onboardGetStarted': 'தொடங்கு',
+    'onboardContinue': 'தொடர்க',
+    'onboardAllowLocation': 'இருப்பிடத்தை அனுமதி',
+    'onboardWithoutLocation': 'இருப்பிடமின்றித் தொடர்க',
+    'onboardTitleOffers': 'வங்கி அட்டைச் சலுகைகள் ஒரே இடத்தில்',
+    'onboardBodyOffers':
+        'இலங்கை வங்கி அட்டைகளுக்கான உணவு, கடை, பயணம் மற்றும் அன்றாட சலுகைகளைக் கண்டறியுங்கள்.',
+    'onboardTitleCards': 'உங்கள் வங்கிகளையும் அட்டைகளையும் தேர்வுசெய்க',
+    'onboardBodyCards':
+        'நீங்கள் பயன்படுத்தும் வங்கிகளையும் அட்டை வகைகளையும் தேர்வுசெய்க. தேர்வுகள் இந்தத் தொலைபேசியில் இருக்கும்.',
+    'onboardTitleNearby': 'அருகிலுள்ள சலுகைகளைக் கண்டறியுங்கள்',
+    'onboardBodyNearby':
+        'உறுதிப்படுத்தப்பட்ட கிளைகளைக் காண இருப்பிடத்தை அனுமதிக்கவும், அல்லது பகிராமல் தொடரவும்.',
+    'cardFilterTitle': 'உங்கள் அட்டைகள்',
+    'localOnly': 'இந்தத் தொலைபேசியில்',
+    'prefsPrivacyNote':
+        'இந்தத் தொலைபேசியில் மட்டுமே சேமிக்கப்படும். அட்டை எண்களோ தனிப்பட்ட விவரங்களோ சேமிக்கப்படாது.',
+    'cardMatchPreview': 'இது எதைப் பொருத்தும்',
+    'cardMatchBody': '{banks} இலிருந்து {types}{networks} சலுகைகள்.',
+    'cardMatchAnyType': 'எந்த அட்டை வகையும்',
+    'cardMatchNetworks': ' ({networks} இல்)',
+    'loadingLabel': 'சலுகைகள் ஏற்றப்படுகின்றன',
+    'removeSaved': 'சேமித்தவற்றிலிருந்து நீக்கு',
   },
 };

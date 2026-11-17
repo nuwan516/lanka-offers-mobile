@@ -151,15 +151,14 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF0F5F5C),
-                                  Color(0xFF0A4644),
-                                ],
+                                colors: [Color(0xFF0F5F5C), Color(0xFF0A4644)],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF0F5F5C).withValues(alpha: 0.25),
+                                  color: const Color(
+                                    0xFF0F5F5C,
+                                  ).withValues(alpha: 0.25),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -169,15 +168,20 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Row(
+                                    Row(
                                       children: [
-                                        Icon(Icons.credit_card_rounded, color: Colors.white, size: 20),
-                                        SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.credit_card_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Card Filter Preferences',
-                                          style: TextStyle(
+                                          l10n.text('cardFilterTitle'),
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14,
@@ -187,14 +191,19 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                       ],
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.18),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.18,
+                                        ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Text(
-                                        'LOCAL ONLY',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l10n.text('localOnly'),
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,
@@ -228,21 +237,33 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.info_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.85)),
+                                      Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 14,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                      ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          'Your bank preferences are saved on this device. No card numbers or personal details are collected or stored.',
+                                          l10n.text('prefsPrivacyNote'),
                                           style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.85),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.85,
+                                            ),
                                             fontSize: 11,
                                             height: 1.35,
                                           ),
@@ -262,10 +283,8 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                     .map(
                                       (bank) => FilterChip(
                                         avatar: CircleAvatar(
-                                          backgroundColor:
-                                              AppColors.accent.withValues(
-                                                alpha: 0.15,
-                                              ),
+                                          backgroundColor: AppColors.accent
+                                              .withValues(alpha: 0.15),
                                           child: Text(
                                             bank.characters.first,
                                             style: const TextStyle(
@@ -287,9 +306,9 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                             title: l10n.text('cardTypes'),
                             children:
                                 [
-                                  l10n.text('creditCard'),
-                                  l10n.text('debitCard'),
-                                ]
+                                      l10n.text('creditCard'),
+                                      l10n.text('debitCard'),
+                                    ]
                                     .map(
                                       (type) => FilterChip(
                                         label: Text(type),
@@ -342,7 +361,7 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Card Matching Preview',
+                                        l10n.text('cardMatchPreview'),
                                         style: theme.textTheme.titleSmall
                                             ?.copyWith(
                                               fontWeight: FontWeight.w700,
@@ -352,7 +371,24 @@ class _BankCardPreferencesScreenState extends State<BankCardPreferencesScreen> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Offers from ${_selectedBanks.join(', ')} matching ${_cardTypes.isEmpty ? "All Card Types" : _cardTypes.join(" or ")}${_networks.isEmpty ? "" : " on ${_networks.join(', ')}"} will be matched.',
+                                    l10n.format('cardMatchBody', {
+                                      'banks': _selectedBanks.join(', '),
+                                      'types':
+                                          _cardTypes.isEmpty
+                                              ? l10n.text('cardMatchAnyType')
+                                              : _cardTypes.join(', '),
+                                      'networks':
+                                          _networks.isEmpty
+                                              ? ''
+                                              : l10n.format(
+                                                'cardMatchNetworks',
+                                                {
+                                                  'networks': _networks.join(
+                                                    ', ',
+                                                  ),
+                                                },
+                                              ),
+                                    }),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color:
                                           isDark

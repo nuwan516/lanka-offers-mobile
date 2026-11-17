@@ -138,7 +138,8 @@ class _BrowseViewState extends State<BrowseView> {
         final shown = state.offers.take(_visible).toList();
         final hasMoreLocal = shown.length < state.offers.length;
         final hasMoreServer = !state.hasReachedMax;
-        final showFooter = hasMoreLocal || (hasMoreServer && state.isFetchingMore);
+        final showFooter =
+            hasMoreLocal || (hasMoreServer && state.isFetchingMore);
 
         return RefreshIndicator(
           onRefresh: () => cubit.load(state.filters),
@@ -150,22 +151,25 @@ class _BrowseViewState extends State<BrowseView> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Center(
-                    child: state.isFetchingMore
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : OutlinedButton(
-                            onPressed: () {
-                              if (hasMoreLocal) {
-                                setState(() => _visible += _pageSize);
-                              } else if (hasMoreServer) {
-                                cubit.loadMore();
-                              }
-                            },
-                            child: Text(l10n.text('showMore')),
-                          ),
+                    child:
+                        state.isFetchingMore
+                            ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                            : OutlinedButton(
+                              onPressed: () {
+                                if (hasMoreLocal) {
+                                  setState(() => _visible += _pageSize);
+                                } else if (hasMoreServer) {
+                                  cubit.loadMore();
+                                }
+                              },
+                              child: Text(l10n.text('showMore')),
+                            ),
                   ),
                 );
               }
@@ -195,11 +199,10 @@ class _ScopeChips extends StatelessWidget {
       ('ONLINE', l10n.text('scopeOnline')),
       ('NATIONWIDE', l10n.text('scopeNationwide')),
     ];
-    return SizedBox(
-      height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
         children: [
           for (final (value, label) in options)
             Padding(
@@ -230,11 +233,10 @@ class _CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return SizedBox(
-      height: 44,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
         children: [
           for (final c in categories)
             Padding(

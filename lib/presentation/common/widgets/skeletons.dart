@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Placeholder shaped like an [OfferCard], shown while offers load.
@@ -74,8 +75,10 @@ class SkeletonFeed extends StatelessWidget {
         children: [for (var i = 0; i < count; i++) const OfferCardSkeleton()],
       ),
     );
+    final label =
+        AppLocalizations.of(context)?.text('loadingLabel') ?? 'Loading offers';
     return Semantics(
-      label: 'Loading',
+      label: label,
       child:
           reduceMotion
               ? column

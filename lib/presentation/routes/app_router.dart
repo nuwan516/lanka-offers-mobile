@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/motion.dart';
 import '../../domain/entities/bank_offer.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
@@ -32,13 +34,29 @@ final goRouter = GoRouter(
         final initialIndex = extraMap?['initialIndex'] as int?;
         return CustomTransitionPage(
           key: state.pageKey,
+          transitionDuration: Motion.medium,
+          reverseTransitionDuration: Motion.fast,
           child: OfferDetailScreen(
             offerId: id,
             contextOffers: offers,
             initialIndex: initialIndex,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return child;
+            if (MediaQuery.disableAnimationsOf(context)) return child;
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Motion.emphasized,
+            );
+            return FadeTransition(
+              opacity: curved,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.04),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: child,
+              ),
+            );
           },
         );
       },
